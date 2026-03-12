@@ -59,7 +59,7 @@
         "定义 CustomerFitLevel、OpportunityLevel、FollowUpPriority 枚举。",
         "创建枚举字典便于前端展示映射。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 5,
