@@ -113,7 +113,7 @@
         "使用 uv 运行 FastAPI 服务，端口 8008。",
         "访问 http://127.0.0.1:8008/health 验证接口返回正确。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 9,
