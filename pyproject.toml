@@ -1,0 +1,13 @@
+[project]
+name = "qitan"
+version = "0.1.0"
+description = "企业背调智能体 MVP - 面向企业商务岗位的企业背调工具"
+readme = "README.md"
+requires-python = ">=3.10"
+
+[project.scripts]
+dev = "uvicorn backend.app.main:app --reload --port 8008"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

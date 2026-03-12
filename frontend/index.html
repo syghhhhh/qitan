@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业背调智能体</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>企业背调智能体</h1>
+            <p class="subtitle">输入企业名称，获取企业画像、需求信号、风险提示和沟通话术</p>
+        </header>
+
+        <section class="input-section">
+            <div class="form-group">
+                <label for="company-name">企业名称 <span class="required">*</span></label>
+                <input type="text" id="company-name" placeholder="请输入目标企业名称" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="company-website">企业官网</label>
+                    <input type="text" id="company-website" placeholder="https://example.com">
+                </div>
+                <div class="form-group">
+                    <label for="sales-goal">跟进目标</label>
+                    <select id="sales-goal">
+                        <option value="first_touch">首次触达</option>
+                        <option value="lead_generation">线索挖掘</option>
+                        <option value="meeting_prep">会前准备</option>
+                        <option value="solution_pitch">方案推进</option>
+                        <option value="account_planning">客户经营</option>
+                        <option value="other">其他</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="user-product">我方产品/服务描述</label>
+                <input type="text" id="user-product" placeholder="例如：CRM系统、销售管理工具、数字化解决方案">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="target-role">目标角色</label>
+                    <input type="text" id="target-role" placeholder="例如：销售负责人、IT负责人">
+                </div>
+                <div class="form-group">
+                    <label for="target-customer">理想客户画像</label>
+                    <input type="text" id="target-customer" placeholder="例如：快速成长的中小型企业">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="extra-context">补充背景</label>
+                <textarea id="extra-context" rows="3" placeholder="其他需要说明的背景信息..."></textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" id="analyze-btn" class="btn-primary">
+                    <span class="btn-text">开始分析</span>
+                    <span class="btn-loading" style="display:none;">分析中...</span>
+                </button>
+            </div>
+        </section>
+
+        <section class="result-section" id="result-section" style="display:none;">
+            <div class="result-header">
+                <h2>背调结果</h2>
+                <div class="priority-badge" id="priority-badge"></div>
+            </div>
+
+            <!-- 企业概览 -->
+            <div class="card" id="company-overview">
+                <h3>企业概览</h3>
+                <div class="card-content"></div>
+            </div>
+
+            <!-- 近期动态 -->
+            <div class="card" id="recent-developments">
+                <h3>近期动态</h3>
+                <div class="card-content"></div>
+            </div>
+
+            <!-- 需求信号 -->
+            <div class="card" id="demand-signals">
+                <h3>需求信号</h3>
+                <div class="card-content"></div>
+            </div>
+
+            <!-- 推荐联系人 -->
+            <div class="card" id="recommended-contacts">
+                <h3>推荐联系人</h3>
+                <div class="card-content"></div>
+            </div>
+
+            <!-- 风险提示 -->
+            <div class="card" id="risk-signals">
+                <h3>风险提示</h3>
+                <div class="card-content"></div>
+            </div>
+
+            <!-- 商务判断 -->
+            <div class="card" id="sales-assessment">
+                <h3>商务判断</h3>
+                <div class="card-content"></div>
+            </div>
+
+            <!-- 沟通策略 -->
+            <div class="card" id="communication-strategy">
+                <h3>沟通策略与话术</h3>
+                <div class="card-content"></div>
+            </div>
+
+            <!-- 证据来源 -->
+            <div class="card" id="evidence-references">
+                <h3>证据来源</h3>
+                <div class="card-content"></div>
+            </div>
+        </section>
+
+        <div class="error-message" id="error-message" style="display:none;"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

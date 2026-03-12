@@ -1,0 +1,380 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f5f7fa;
+    color: #333;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+header h1 {
+    font-size: 2rem;
+    color: #1a73e8;
+    margin-bottom: 10px;
+}
+
+header .subtitle {
+    color: #666;
+    font-size: 1rem;
+}
+
+/* 输入区域 */
+.input-section {
+    background: #fff;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: #333;
+}
+
+.required {
+    color: #e53935;
+}
+
+input[type="text"],
+select,
+textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+input[type="text"]:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+}
+
+textarea {
+    resize: vertical;
+}
+
+.form-actions {
+    margin-top: 20px;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 12px 24px;
+    background: #1a73e8;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover {
+    background: #1557b0;
+}
+
+.btn-primary:disabled {
+    background: #93b5e8;
+    cursor: not-allowed;
+}
+
+/* 结果区域 */
+.result-section {
+    margin-top: 30px;
+}
+
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.result-header h2 {
+    font-size: 1.5rem;
+    color: #333;
+}
+
+.priority-badge {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.priority-badge.p1 {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.priority-badge.p2 {
+    background: #fff3e0;
+    color: #ef6c00;
+}
+
+.priority-badge.p3 {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.priority-badge.discard {
+    background: #ffebee;
+    color: #c62828;
+}
+
+/* 卡片样式 */
+.card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card h3 {
+    font-size: 1.1rem;
+    color: #1a73e8;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.card-content {
+    color: #555;
+}
+
+/* 企业概览 */
+.company-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-item .label {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 2px;
+}
+
+.info-item .value {
+    font-weight: 500;
+    color: #333;
+}
+
+/* 列表样式 */
+.item-list {
+    list-style: none;
+}
+
+.item-list li {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.item-list li:last-child {
+    border-bottom: none;
+}
+
+.item-title {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.item-meta {
+    font-size: 12px;
+    color: #888;
+}
+
+.item-desc {
+    margin-top: 6px;
+    font-size: 14px;
+}
+
+/* 信号强度标签 */
+.strength-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.strength-badge.high {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.strength-badge.medium {
+    background: #fff3e0;
+    color: #ef6c00;
+}
+
+.strength-badge.low {
+    background: #f5f5f5;
+    color: #666;
+}
+
+/* 风险等级标签 */
+.level-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.level-badge.high {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.level-badge.medium {
+    background: #fff3e0;
+    color: #ef6c00;
+}
+
+.level-badge.low {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+/* 商务判断 */
+.assessment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.assessment-item {
+    text-align: center;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.assessment-item .value {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #1a73e8;
+}
+
+.assessment-item .label {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+}
+
+.assessment-summary {
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 3px solid #1a73e8;
+}
+
+/* 沟通策略 */
+.script-block {
+    background: #f8f9fa;
+    padding: 16px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+}
+
+.script-block h4 {
+    font-size: 14px;
+    color: #1a73e8;
+    margin-bottom: 8px;
+}
+
+.script-block p {
+    font-size: 14px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+}
+
+.entry-points {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.entry-point-tag {
+    padding: 4px 12px;
+    background: #e3f2fd;
+    color: #1565c0;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.avoid-point-tag {
+    padding: 4px 12px;
+    background: #ffebee;
+    color: #c62828;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+/* 错误提示 */
+.error-message {
+    background: #ffebee;
+    color: #c62828;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-top: 20px;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .company-info {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .assessment-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}

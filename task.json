@@ -16,7 +16,7 @@
         "创建 pyproject.toml、README.md。",
         "检查目录结构和文件是否创建成功。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 2,
