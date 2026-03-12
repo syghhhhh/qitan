@@ -100,7 +100,7 @@
         "将依赖写入 pyproject.toml。",
         "验证项目 .venv 中可正确导入 fastapi 和 uvicorn。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 8,
