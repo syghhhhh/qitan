@@ -229,7 +229,7 @@
         "创建 PROMPTS.md 说明 Prompt 模板设计。",
         "确保文档与代码实现一致。"
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }
