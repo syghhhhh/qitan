@@ -1,268 +1,233 @@
 {
   "project": "qitan",
-  "description": "用于 Claude Code 自动化开发与状态记录的任务清单。目标是完成一个最小可运行闭环：在项目目录内使用 uv 管理独立 Python 虚拟环境，启动本地 FastAPI 服务端口，并提供一个用于展示的网页页面。每个 task 都应具备明确目标、清晰的子开发步骤，并尽量包含实际运行、验证、调试与结果确认，以便在多轮自动化执行中读取上下文、推进开发和更新 passes 状态。",
+  "description": "企业背调智能体 MVP 项目。面向企业商务岗位，对企业进行公开信息背调，输出企业画像、需求信号、风险提示、联系人建议和沟通话术。技术栈：Python + FastAPI + uv 管理环境。基于 discuss001.md - discuss004.md 的产品规划落地开发。",
   "tasks": [
     {
       "id": 1,
       "title": "初始化项目目录与基础文件",
-      "description": "创建最小可开发的项目结构，确保后续任务有稳定的文件布局、入口位置和文档文件。",
+      "description": "创建最小可开发的项目结构，确保后续任务有稳定的文件布局。",
       "steps": [
         "创建项目根目录下的 backend、frontend、docs 目录。",
         "创建 backend/app 目录作为 FastAPI 应用代码入口目录。",
+        "创建 backend/app/schemas 目录存放数据模型定义。",
+        "创建 backend/app/prompts 目录存放 Prompt 模板。",
+        "创建 backend/app/services 目录存放业务逻辑。",
         "创建 frontend/index.html、frontend/style.css、frontend/app.js。",
         "创建 pyproject.toml、README.md。",
-        "检查目录结构和文件是否创建成功，如路径或命名不一致则立即修正。"
+        "检查目录结构和文件是否创建成功。"
       ],
       "passes": false
     },
     {
       "id": 2,
       "title": "使用 uv 初始化项目级 Python 环境",
-      "description": "在项目目录内使用 uv 创建并管理独立虚拟环境，确保与本机其他 Python 环境隔离，作为后续所有 Python 开发和运行的唯一环境。",
+      "description": "在项目目录内使用 uv 创建并管理独立虚拟环境。",
       "steps": [
         "检查本机是否已安装 uv，如未安装则先安装 uv。",
-        "在项目根目录执行 uv 初始化或补全 pyproject.toml 所需基础配置。",
-        "在项目目录下创建 .venv 虚拟环境，确保虚拟环境位于当前项目目录内部。",
-        "确认后续安装依赖和运行命令均通过 uv 或项目内 .venv 执行，而不是使用系统 Python。"
+        "在项目根目录执行 uv init 或补全 pyproject.toml 基础配置。",
+        "在项目目录下创建 .venv 虚拟环境。",
+        "确认后续命令均通过 uv 或项目内 .venv 执行。"
       ],
       "passes": false
     },
     {
       "id": 3,
-      "title": "明确最小功能闭环与接口目标",
-      "description": "定义当前版本只实现的最小功能，避免自动化开发过程中范围漂移。确保前后端围绕同一个闭环开发。",
+      "title": "定义企业背调核心数据模型 Schema",
+      "description": "基于 discuss003.md 的 JSON Schema 定义 Python 数据模型，确保与产品规划一致。",
       "steps": [
-        "确定前端仅提供一个企业名称输入框和一个提交按钮。",
-        "确定后端至少提供 GET /health 和 POST /analyze 两个接口。",
-        "确定 POST /analyze 接收 company_name，并返回可展示的 JSON 结果。",
-        "确定本阶段分析结果使用 mock 数据，不接真实模型或数据库。",
-        "将最小功能范围写入 README.md。",
-        "检查描述是否与后续任务保持一致，如不一致则修正文档。"
+        "创建 backend/app/schemas/common.py 定义 Meta、Input 等基础模型。",
+        "创建 backend/app/schemas/company.py 定义 CompanyProfile、RecentDevelopment 模型。",
+        "创建 backend/app/schemas/analysis.py 定义 DemandSignal、RiskSignal、OrganizationInsights 模型。",
+        "创建 backend/app/schemas/assessment.py 定义 SalesAssessment、CommunicationStrategy 模型。",
+        "创建 backend/app/schemas/output.py 定义 EvidenceReference 和完整输出模型 DueDiligenceOutput。",
+        "确保所有模型字段与 discuss003.md 的 JSON Schema 完全一致。",
+        "在 schemas/__init__.py 中统一导出所有模型。"
       ],
       "passes": false
     },
     {
       "id": 4,
-      "title": "使用 uv 安装后端依赖并固化项目依赖配置",
-      "description": "通过 uv 在项目级虚拟环境中安装 FastAPI 最小运行依赖，并将依赖明确记录到项目配置中，保证后续自动化执行可复现。",
+      "title": "定义字段枚举字典",
+      "description": "基于 discuss004.md 定义所有枚举值，确保前后端统一口径。",
       "steps": [
-        "使用 uv 在项目虚拟环境中安装 fastapi、uvicorn 等最小必要依赖。",
-        "将依赖写入 pyproject.toml 或 uv 管理的锁定文件中。",
-        "检查依赖配置内容是否完整且没有无关依赖。",
-        "使用 uv 同步或安装一次依赖，验证项目配置可正常复现环境。",
-        "执行 Python 导入测试，确认 fastapi 和 uvicorn 可在项目 .venv 中被正确导入。",
-        "如安装报错，排查 Python 版本、网络问题或依赖冲突并修复。"
+        "创建 backend/app/schemas/enums.py 定义所有枚举类。",
+        "定义 SalesGoal 枚举：lead_generation、first_touch、meeting_prep、solution_pitch、account_planning、other。",
+        "定义 RecentDevelopmentType 枚举：news、financing、hiring、expansion、new_product、bidding、partnership、digital_transformation、management_change、compliance、other。",
+        "定义 DemandSignalType 枚举：recruitment_signal、expansion_signal、digitalization_signal、growth_signal、management_signal、cost_reduction_signal、compliance_signal、customer_operation_signal、sales_management_signal、data_governance_signal、other。",
+        "定义 RiskType 枚举：legal、compliance、financial、reputation、procurement_complexity、organization_instability、low_budget_probability、unclear_demand、long_decision_cycle、other。",
+        "定义 Strength 枚举：high、medium、low。",
+        "定义 CustomerFitLevel、OpportunityLevel、FollowUpPriority 枚举。",
+        "创建枚举字典便于前端展示映射。"
       ],
       "passes": false
     },
     {
       "id": 5,
-      "title": "创建 FastAPI 应用入口并启动健康检查接口",
-      "description": "搭建后端服务基础骨架，确保在项目级 uv 环境中可以成功启动一个 FastAPI 端口。",
+      "title": "定义评分规则配置",
+      "description": "基于 discuss004.md 的评分规则表定义评分配置，用于后续规则引擎。",
       "steps": [
-        "在 backend/app/main.py 中创建 FastAPI 应用实例。",
-        "实现 GET /health 接口，返回简单 JSON，例如 status=ok。",
-        "使用 uv 运行 FastAPI 服务，例如通过 uv run uvicorn backend.app.main:app --reload --port 8008。",
-        "实际运行服务，确认服务进程能成功启动。",
-        "访问 http://127.0.0.1:8008/health 验证接口返回是否正确。",
-        "如果启动失败或接口报错，定位导入路径、语法错误、环境问题或 uv 命令使用错误并修复。"
+        "创建 backend/app/config/scoring.py 存放评分配置。",
+        "定义 ICP 匹配度评分规则（0-35分）：行业匹配(0-12)、企业规模匹配(0-8)、业务场景匹配(0-10)、企业类型匹配(0-5)。",
+        "定义需求信号评分规则（0-35分）：动态新鲜度(0-10)、信号强度(0-15)、多信号一致性(0-10)。",
+        "定义可触达可行性评分规则（0-15分）：目标角色清晰度(0-5)、切入场景清晰度(0-5)、组织路径可推断性(0-5)。",
+        "定义风险扣分规则（0-15分）：按风险等级和类型扣分。",
+        "定义总分映射规则：75-100→P1、55-74→P2、35-54→P3、0-34→discard。",
+        "定义兜底规则：强制 discard 条件、强制 P1 条件、降级条件。"
       ],
       "passes": false
     },
     {
       "id": 6,
-      "title": "为 FastAPI 添加基础跨域支持",
-      "description": "解决前端页面调用后端接口时可能出现的跨域问题，保证联调可进行。",
+      "title": "创建三个核心 Prompt 模板",
+      "description": "基于 discuss003.md 的 Prompt 模板定义，用于后续 LLM 调用。",
       "steps": [
-        "在 FastAPI 中引入 CORSMiddleware。",
-        "配置本地开发可用的跨域策略。",
-        "使用 uv 重启服务并确认应用正常启动。",
-        "使用浏览器或开发者工具验证接口响应头包含必要的跨域设置。",
-        "如果跨域配置导致服务异常或无效，修正配置并重新测试。"
+        "创建 backend/app/prompts/extraction.py 存放企业信息抽取 Prompt。",
+        "实现 Prompt 1：企业信息抽取 System Prompt 和 User Prompt Template。",
+        "创建 backend/app/prompts/analysis.py 存放商务分析 Prompt。",
+        "实现 Prompt 2：商务分析 System Prompt 和 User Prompt Template。",
+        "创建 backend/app/prompts/communication.py 存放话术生成 Prompt。",
+        "实现 Prompt 3：话术生成 System Prompt 和 User Prompt Template。",
+        "创建 Prompt 渲染函数，支持变量替换。"
       ],
       "passes": false
     },
     {
       "id": 7,
-      "title": "定义分析接口的请求与响应数据模型",
-      "description": "使用明确的数据结构约束 POST /analyze 的输入和输出，方便自动化开发、前端对接和后续扩展。",
+      "title": "使用 uv 安装后端依赖",
+      "description": "安装 FastAPI 最小运行依赖并固化配置。",
       "steps": [
-        "创建 AnalyzeRequest 模型，至少包含 company_name 字段。",
-        "创建 AnalyzeResponse 模型，包含 success、message、data 等字段。",
-        "为 data 定义最小展示结构，例如 company_name、summary、demand_signals、risk_signals、follow_up_priority。",
-        "将模型应用到接口签名中。",
-        "启动服务并检查 Swagger 文档中的模型展示是否符合预期。",
-        "如果字段命名或结构不清晰，立即调整并重新验证。"
+        "使用 uv 安装 fastapi、uvicorn、pydantic 等依赖。",
+        "将依赖写入 pyproject.toml。",
+        "验证项目 .venv 中可正确导入 fastapi 和 uvicorn。"
       ],
       "passes": false
     },
     {
       "id": 8,
-      "title": "实现最小 mock 分析逻辑",
-      "description": "创建一个不依赖外部服务的分析逻辑，确保主流程可以先跑通并可演示。",
+      "title": "创建 FastAPI 应用入口并启动健康检查接口",
+      "description": "搭建后端服务基础骨架。",
       "steps": [
-        "在 backend/app 下创建独立分析逻辑文件，例如 analyzer.py。",
-        "实现一个函数，接收 company_name 并返回固定结构的 mock 分析结果。",
-        "为不同输入保留简单分支，例如科技、制造、教育关键词对应不同摘要。",
-        "为空输入或异常输入设计可读错误处理。",
-        "在项目级 uv 环境中直接运行或导入该函数，验证返回结构是否正确。",
-        "如果返回字段与 schema 不一致，立即修正并再次测试。"
+        "在 backend/app/main.py 中创建 FastAPI 应用实例。",
+        "实现 GET /health 接口，返回 {\"status\": \"ok\"}。",
+        "配置 CORS 中间件支持跨域。",
+        "使用 uv 运行 FastAPI 服务，端口 8008。",
+        "访问 http://127.0.0.1:8008/health 验证接口返回正确。"
       ],
       "passes": false
     },
     {
       "id": 9,
-      "title": "实现 POST /analyze 接口并完成接口级调试",
-      "description": "将请求模型、mock 分析逻辑和响应模型串联起来，形成可供前端调用的核心接口。",
+      "title": "实现标准 Mock 分析数据",
+      "description": "基于 discuss003.md 的最小输出样例创建 Mock 分析逻辑，确保返回数据结构符合 Schema。",
       "steps": [
-        "在 main.py 中实现 POST /analyze 接口。",
-        "接口接收 AnalyzeRequest，调用 analyzer.py 中的分析函数。",
-        "返回符合 AnalyzeResponse 的统一 JSON。",
-        "增加基础异常捕获，保证报错时返回 JSON 而不是 HTML。",
-        "使用 uv 启动服务后用 curl、Swagger 或其他方式实际请求接口。",
-        "验证正常输入、空输入和异常输入场景。",
-        "如果接口逻辑、字段或状态不正确，修复后重复测试。"
+        "创建 backend/app/services/mock_analyzer.py。",
+        "实现 get_mock_analysis 函数，返回完整的 DueDiligenceOutput 结构。",
+        "Mock 数据包含：meta、input、company_profile、recent_developments、demand_signals、organization_insights、risk_signals、sales_assessment、communication_strategy、evidence_references。",
+        "根据不同企业名称关键词（如科技、制造、教育）返回不同分支的 Mock 数据。",
+        "确保 Mock 数据符合 discuss003.md 第590-745行的样例格式。"
       ],
       "passes": false
     },
     {
       "id": 10,
-      "title": "补充后端日志与调试信息",
-      "description": "为后续自动化开发和问题定位提供最基础的可观测性，方便确认任务执行结果。",
+      "title": "实现 POST /analyze 接口",
+      "description": "创建核心分析接口，串联请求模型、Mock 分析逻辑和响应模型。",
       "steps": [
-        "在 /analyze 请求入口打印关键日志，例如收到的 company_name。",
-        "在分析完成后打印简要结果或状态。",
-        "在异常分支打印错误信息。",
-        "使用 uv 重启服务并再次调用接口，检查日志是否可读且不过度冗余。",
-        "如果日志缺失关键上下文或过于杂乱，调整输出内容。"
+        "在 backend/app/main.py 中实现 POST /analyze 接口。",
+        "接口接收 AnalyzeRequest，包含 company_name（必填）和其他可选字段。",
+        "调用 mock_analyzer 返回 DueDiligenceOutput。",
+        "增加异常捕获，保证报错时返回 JSON。",
+        "验证接口 Swagger 文档展示正确。",
+        "测试正常输入、空输入场景。"
       ],
       "passes": false
     },
     {
       "id": 11,
-      "title": "创建最小前端页面骨架",
-      "description": "提供一个最简单的网页展示界面，具备输入、按钮和结果展示区域。",
+      "title": "创建前端页面骨架",
+      "description": "提供企业背调输入和结果展示页面。",
       "steps": [
-        "在 frontend/index.html 中添加页面标题、输入框、按钮、结果区域。",
-        "在 frontend/style.css 中添加基础样式，保证页面布局可读。",
-        "在 frontend/app.js 中预留交互逻辑入口。",
-        "直接打开 HTML 文件或通过静态方式查看页面，确认页面结构正常显示。",
-        "如样式错乱、元素缺失或脚本引用错误，修复后重新检查。"
+        "在 frontend/index.html 中创建页面结构：标题、输入区域、结果展示区域。",
+        "输入区域包含：企业名称输入框（必填）、官网输入框、我方产品描述、跟进目标选择、目标角色、补充背景。",
+        "结果展示区域分为多个卡片：企业概览、近期动态、需求信号、推荐联系人、风险提示、商务判断、沟通策略、证据来源。",
+        "在 frontend/style.css 中添加卡片式布局样式。",
+        "在 frontend/app.js 中预留交互逻辑。"
       ],
       "passes": false
     },
     {
       "id": 12,
-      "title": "实现前端提交请求逻辑",
-      "description": "让前端页面可以将用户输入发送到 FastAPI 的 POST /analyze 接口。",
+      "title": "实现前端请求与结果渲染",
+      "description": "实现前端调用后端接口并渲染背调结果。",
       "steps": [
-        "在 app.js 中监听按钮点击事件。",
-        "读取输入框中的 company_name。",
-        "添加基础非空校验，输入为空时给出提示。",
-        "使用 fetch 向后端 POST /analyze 发送 JSON 请求。",
-        "处理网络异常和接口异常返回。",
-        "在浏览器中实际点击按钮，检查请求是否成功发出。",
-        "如果请求失败，排查地址、跨域、JSON 格式或脚本错误并修复。"
+        "在 app.js 中监听提交按钮点击事件。",
+        "读取所有输入字段，组装请求 JSON。",
+        "添加基础校验：企业名称不能为空。",
+        "使用 fetch POST 到 /analyze 接口。",
+        "实现结果渲染函数：将返回的 JSON 渲染到对应卡片区域。",
+        "渲染 company_profile 到企业概览卡片。",
+        "渲染 recent_developments 为动态列表。",
+        "渲染 demand_signals 为需求信号列表（显示信号类型、强度、推断）。",
+        "渲染 organization_insights.recommended_target_roles 为推荐联系人列表。",
+        "渲染 risk_signals 为风险列表（显示风险类型、等级、影响）。",
+        "渲染 sales_assessment 显示跟进优先级和判断摘要。",
+        "渲染 communication_strategy 显示话术（微信、电话、邮件）。",
+        "处理加载态和错误提示。"
       ],
       "passes": false
     },
     {
       "id": 13,
-      "title": "实现前端结果渲染",
-      "description": "将后端返回的分析结果清晰展示在页面上，形成用户可见的最小闭环。",
+      "title": "将前端静态页面挂载到 FastAPI 服务",
+      "description": "实现单端口访问。",
       "steps": [
-        "在页面结果区域展示 company_name 和 summary。",
-        "将 demand_signals 渲染为列表。",
-        "将 risk_signals 渲染为列表。",
-        "展示 follow_up_priority 或其他简化结论字段。",
-        "对 success=false 的情况展示错误信息。",
-        "实际请求接口并观察渲染效果。",
-        "如果字段渲染错位、空白或报错，修复 DOM 操作和字段映射。"
+        "在 FastAPI 中配置静态文件服务。",
+        "增加根路由 /，返回 index.html。",
+        "重启服务访问 http://127.0.0.1:8008/ 确认页面正常。",
+        "确认页面发起接口请求正常。"
       ],
       "passes": false
     },
     {
       "id": 14,
-      "title": "补充前端加载态与基础交互反馈",
-      "description": "增强页面可用性，使用户在请求过程中和失败情况下都有明确反馈。",
+      "title": "完成端到端联调与验收",
+      "description": "验证完整闭环：输入企业名称，返回完整背调结果并正确展示。",
       "steps": [
-        "点击按钮后显示加载提示，例如“分析中...”。",
-        "请求发送期间禁用按钮，避免重复点击。",
-        "请求完成后恢复按钮状态。",
-        "请求失败时在页面中展示错误提示。",
-        "实际多次点击测试按钮状态变化和错误反馈是否正常。",
-        "如果出现重复请求、状态未恢复或提示不清晰，进行修复。"
+        "启动 FastAPI 服务。",
+        "在浏览器中打开首页。",
+        "输入企业名称（如某科技有限公司），填写我方产品描述。",
+        "点击分析，确认页面展示完整背调结果。",
+        "验证各卡片内容渲染正确：企业画像、需求信号、推荐角色、风险、话术等。",
+        "测试空输入场景，确认有明确提示。",
+        "检查浏览器控制台和后端日志，修复问题。"
       ],
       "passes": false
     },
     {
       "id": 15,
-      "title": "将前端静态页面挂载到 FastAPI 服务",
-      "description": "实现单端口访问：启动 FastAPI 后即可同时访问网页页面和 API。",
+      "title": "补充 README 项目说明",
+      "description": "记录项目运行方式和功能说明。",
       "steps": [
-        "在 FastAPI 中配置静态文件服务，挂载 frontend 目录。",
-        "增加根路由 /，返回 index.html。",
-        "使用 uv 重启服务并访问 http://127.0.0.1:8008/。",
-        "确认页面可正常打开且静态资源加载成功。",
-        "确认页面发起接口请求时使用当前服务地址即可访问。",
-        "如果页面打不开、样式丢失或脚本 404，修复静态资源路径后重新测试。"
+        "说明项目目标：企业背调智能体 MVP。",
+        "说明最小功能范围：输入企业名称，输出背调报告和话术建议。",
+        "写明 uv 环境管理、依赖安装、服务启动命令。",
+        "写明 API 接口说明：GET /health、POST /analyze。",
+        "写明数据模型说明，引用 discuss003.md 的 Schema。",
+        "写明评分规则说明，引用 discuss004.md 的评分表。"
       ],
       "passes": false
     },
     {
       "id": 16,
-      "title": "完成本地端到端联调与调试",
-      "description": "验证完整闭环：用户通过浏览器输入内容，前端调用后端，后端返回结果，页面正确展示。",
+      "title": "创建开发文档索引",
+      "description": "整理开发文档，便于后续扩展。",
       "steps": [
-        "使用 uv 启动 FastAPI 服务。",
-        "在浏览器中打开首页。",
-        "输入一个正常企业名称并点击分析。",
-        "确认页面成功展示分析结果。",
-        "测试空输入场景，确认页面给出提示。",
-        "测试一个不同关键词企业名称，确认 mock 分析结果有变化。",
-        "检查浏览器控制台和后端日志，定位并修复联调问题。"
-      ],
-      "passes": false
-    },
-    {
-      "id": 17,
-      "title": "补充 README 运行说明与环境隔离说明",
-      "description": "记录当前项目如何使用 uv 管理环境、安装依赖、启动服务和访问页面，便于自动化开发后续轮次与人工查看。",
-      "steps": [
-        "在 README.md 中说明项目目标和最小功能范围。",
-        "写明必须使用 uv 和项目目录内 .venv，不依赖系统 Python 环境。",
-        "写明创建虚拟环境、安装依赖和启动服务的命令。",
-        "写明访问首页和健康检查接口的地址。",
-        "写明 POST /analyze 的最小输入输出说明。",
-        "检查 README 内容是否与当前代码实现一致，如不一致则修正。"
-      ],
-      "passes": false
-    },
-    {
-      "id": 18,
-      "title": "增加最小验收与回归验证",
-      "description": "对当前 MVP 做一次完整验收，保证主要功能稳定可用，并为后续修改提供最基础回归基线。",
-      "steps": [
-        "验证在全新终端中仍可通过 uv 使用项目目录内 .venv 运行项目。",
-        "验证服务启动后 /health 正常返回。",
-        "验证 /analyze 对正常输入返回结构化 JSON。",
-        "验证首页可正常访问。",
-        "验证从页面发起分析请求可以得到结果展示。",
-        "验证错误输入或空输入时页面和接口都有明确反馈。",
-        "如发现任何失败项，修复后重新执行整套验证。"
-      ],
-      "passes": false
-    },
-    {
-      "id": 19,
-      "title": "整理代码结构并为后续扩展预留接口",
-      "description": "在不扩大当前范围的前提下，对代码进行最小整理，避免后续接入真实分析逻辑时大面积重构。",
-      "steps": [
-        "确保分析逻辑位于独立模块，不直接耦合在路由函数内部。",
-        "确保 schema、主应用入口、前端静态文件职责分离。",
-        "如有硬编码接口地址或路径，提取为清晰常量。",
-        "使用 uv 重启服务并重新执行一次基础联调，确认整理后功能未损坏。",
-        "如整理导致路径或导入错误，及时修复并再次验证。"
+        "在 docs/ 目录创建 ARCHITECTURE.md 说明项目架构。",
+        "创建 API.md 说明接口定义。",
+        "创建 SCHEMA.md 说明数据模型设计。",
+        "创建 SCORING.md 说明评分规则。",
+        "创建 PROMPTS.md 说明 Prompt 模板设计。",
+        "确保文档与代码实现一致。"
       ],
       "passes": false
     }
