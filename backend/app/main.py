@@ -1,14 +1,20 @@
 """
 企业背调智能体 MVP - FastAPI 应用入口
 """
+from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .schemas import DueDiligenceOutput, SalesGoalEnum
 from .services.mock_analyzer import get_mock_analysis
+
+# 前端静态文件目录
+FRONTEND_DIR = Path(__file__).parent.parent.parent / "frontend"
 
 # 创建 FastAPI 应用实例
 app = FastAPI(
@@ -114,3 +120,16 @@ async def analyze(request: AnalyzeRequest) -> DueDiligenceOutput:
                 "detail": str(e),
             },
         )
+
+
+# 挂载静态文件服务（CSS、JS）
+app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+
+
+@app.get("/", response_class=FileResponse)
+async def root():
+    """返回前端首页"""
+    index_path = FRONTEND_DIR / "index.html"
+    if index_path.exists():
+        return FileResponse(index_path)
+    raise HTTPException(status_code=404, detail="index.html not found")
