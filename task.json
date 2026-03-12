@@ -215,7 +215,7 @@
         "写明数据模型说明，引用 discuss003.md 的 Schema。",
         "写明评分规则说明，引用 discuss004.md 的评分表。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 16,
