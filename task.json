@@ -28,7 +28,7 @@
         "在项目目录下创建 .venv 虚拟环境。",
         "确认后续命令均通过 uv 或项目内 .venv 执行。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 3,
