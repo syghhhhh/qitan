@@ -53,6 +53,10 @@
 
 ### Git 提交规范
 
+**自动执行规则**：
+- Git 相关命令（git status、git add、git commit、git push）自动执行，无需人工确认
+- 在单个 Bash 命令中使用 `&&` 链式执行，减少交互次数
+
 **Commit 格式**：
 ```
 <type>: <subject>
@@ -74,13 +78,9 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 - 每完成一个 task.json 中的任务后提交
 - 提交后立即推送到远程仓库
 
-**提交流程**：
+**提交流程（单命令执行）**：
 ```bash
-git status                           # 查看变更
-git add <files>                      # 添加文件
-git diff --cached --stat             # 确认暂存内容
-git commit -m "..."                  # 提交
-git push origin main                 # 推送
+git status && git add <files> && git commit -m "..." && git push origin main
 ```
 
 ---
