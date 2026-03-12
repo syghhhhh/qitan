@@ -140,7 +140,7 @@
         "验证接口 Swagger 文档展示正确。",
         "测试正常输入、空输入场景。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 11,
