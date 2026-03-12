@@ -43,7 +43,7 @@
         "确保所有模型字段与 discuss003.md 的 JSON Schema 完全一致。",
         "在 schemas/__init__.py 中统一导出所有模型。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 4,
