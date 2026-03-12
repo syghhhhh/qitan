@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(uv --version)",
+      "Bash(cd H:/qitan && uv venv)",
+      "Bash(cd H:/qitan && uv run python --version)",
+      "Bash(cd H:/qitan && uv run python -c \"\nfrom backend.app.schemas import \\(\n    Meta, Input, CompanyProfile, RecentDevelopment,\n    DemandSignal, RiskSignal, OrganizationInsights,\n    SalesAssessment, CommunicationStrategy,\n    DueDiligenceOutput, EvidenceReference\n\\)\nprint\\('所有模型导入成功!'\\)\n\")",
+      "Bash(cd H:/qitan && uv pip install pydantic)"
+    ]
+  }
+}
