@@ -89,7 +89,7 @@
         "实现 Prompt 3：话术生成 System Prompt 和 User Prompt Template。",
         "创建 Prompt 渲染函数，支持变量替换。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 7,
