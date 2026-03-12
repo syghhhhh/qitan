@@ -153,7 +153,7 @@
         "在 frontend/style.css 中添加卡片式布局样式。",
         "在 frontend/app.js 中预留交互逻辑。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 12,
@@ -174,7 +174,7 @@
         "渲染 communication_strategy 显示话术（微信、电话、邮件）。",
         "处理加载态和错误提示。"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": 13,
