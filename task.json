@@ -416,7 +416,7 @@
         "hybrid 模式下未实现模块自动降级"
       ],
       "depends_on": [3, 4],
-      "passes": false
+      "passes": true
     },
     {
       "id": 19,

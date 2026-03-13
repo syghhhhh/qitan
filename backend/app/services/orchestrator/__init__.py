@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+# RunMode 从 config 模块导入，保持向后兼容
+from ...config.run_mode import RunMode
 from .pipeline_state import (
     AnalysisResult,
     CandidateFact,
@@ -15,7 +17,6 @@ from .pipeline_state import (
     ProcessedEvidence,
     RawEvidence,
     ResolvedCompany,
-    RunMode,
     StageError,
     StageWarning,
 )
@@ -23,9 +24,12 @@ from .analysis_orchestrator import (
     AnalysisOrchestrator,
     AnalysisRequest,
     get_orchestrator,
+    reset_orchestrator,
 )
 
 __all__ = [
+    # run_mode (从 config 模块重新导出，保持向后兼容)
+    "RunMode",
     # pipeline_state
     "AnalysisResult",
     "CandidateFact",
@@ -34,11 +38,11 @@ __all__ = [
     "ProcessedEvidence",
     "RawEvidence",
     "ResolvedCompany",
-    "RunMode",
     "StageError",
     "StageWarning",
     # analysis_orchestrator
     "AnalysisOrchestrator",
     "AnalysisRequest",
     "get_orchestrator",
+    "reset_orchestrator",
 ]

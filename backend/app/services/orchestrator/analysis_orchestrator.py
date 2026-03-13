@@ -19,6 +19,8 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
+from ...config import get_run_mode_config, RunModeConfig
+from ...config.run_mode import RunMode
 from ...schemas import (
     DueDiligenceOutput,
     Input,
@@ -27,7 +29,6 @@ from ...schemas import (
 from .pipeline_state import (
     PipelineStage,
     PipelineState,
-    RunMode,
 )
 
 
@@ -61,14 +62,20 @@ class AnalysisOrchestrator:
         result = await orchestrator.analyze(request)
     """
 
-    def __init__(self, default_run_mode: RunMode = RunMode.FULL_MOCK):
+    def __init__(
+        self,
+        default_run_mode: Optional[RunMode] = None,
+        run_mode_config: Optional[RunModeConfig] = None,
+    ):
         """
         初始化编排器
 
         Args:
-            default_run_mode: 默认运行模式，默认为 FULL_MOCK
+            default_run_mode: 默认运行模式，如果为 None 则从配置获取
+            run_mode_config: 运行模式配置实例，如果为 None 则使用全局配置
         """
-        self.default_run_mode = default_run_mode
+        self.run_mode_config = run_mode_config or get_run_mode_config()
+        self.default_run_mode = default_run_mode or self.run_mode_config.default_run_mode
 
     async def analyze(self, request: AnalysisRequest) -> DueDiligenceOutput:
         """
@@ -87,17 +94,28 @@ class AnalysisOrchestrator:
         Returns:
             DueDiligenceOutput: 完整的背调输出结果
         """
+        # 根据配置确定实际运行模式
+        actual_run_mode = self.run_mode_config.get_run_mode(request.run_mode)
+
         # 初始化流水线状态
         state = PipelineState(
-            run_mode=request.run_mode,
+            run_mode=actual_run_mode,
             request=request.model_dump(),
         )
 
+        # 记录模式切换信息
+        if actual_run_mode != request.run_mode:
+            state.add_warning(
+                stage=PipelineStage.INIT,
+                warning_type="RunModeChanged",
+                warning_message=f"运行模式从 {request.run_mode.value} 切换到 {actual_run_mode.value}",
+            )
+
         try:
             # 根据运行模式选择执行路径
-            if request.run_mode == RunMode.FULL_MOCK:
+            if actual_run_mode == RunMode.FULL_MOCK:
                 result = await self._run_full_mock(state, request)
-            elif request.run_mode == RunMode.HYBRID:
+            elif actual_run_mode == RunMode.HYBRID:
                 result = await self._run_hybrid(state, request)
             else:
                 result = await self._run_full_pipeline(state, request)
@@ -119,17 +137,21 @@ class AnalysisOrchestrator:
             state.update_stage(PipelineStage.FAILED)
 
             # 尝试降级到 mock 模式
-            state.add_error(
-                stage=PipelineStage.INIT,
-                error_type="FallbackToMock",
-                error_message="主流程失败，降级到 mock 模式",
-                is_recoverable=True,
-                fallback_used=True,
-                fallback_description="使用 mock 数据返回结果",
-            )
+            if self.run_mode_config.enable_auto_fallback:
+                state.add_error(
+                    stage=PipelineStage.INIT,
+                    error_type="FallbackToMock",
+                    error_message="主流程失败，降级到 mock 模式",
+                    is_recoverable=True,
+                    fallback_used=True,
+                    fallback_description="使用 mock 数据返回结果",
+                )
 
-            # 返回 mock 结果作为兜底
-            return await self._get_fallback_mock_result(request)
+                # 返回 mock 结果作为兜底
+                return await self._get_fallback_mock_result(request)
+
+            # 如果不允许自动降级，重新抛出异常
+            raise
 
     async def _run_full_mock(
         self, state: PipelineState, request: AnalysisRequest
@@ -197,8 +219,7 @@ class AnalysisOrchestrator:
         在此模式下，部分模块使用真实实现，部分模块使用 mock。
         当某个真实模块未实现或失败时，自动降级到 mock。
 
-        当前阶段（v0.0.2）所有真实模块尚未完成，因此 hybrid 模式
-        会自动降级为 full_mock 模式。
+        根据配置中模块的实现状态决定使用真实实现还是 mock。
 
         Args:
             state: 流水线状态
@@ -210,15 +231,51 @@ class AnalysisOrchestrator:
         start_time = time.time()
         state.debug_info["execution_path"] = "hybrid"
 
-        # 当前阶段所有模块都未实现，记录警告并降级到 mock
-        state.add_warning(
-            stage=PipelineStage.INIT,
-            warning_type="ModuleNotImplemented",
-            warning_message="Hybrid 模式下所有真实模块尚未实现，降级到 full_mock",
-        )
+        # 获取模块状态摘要
+        module_status = self.run_mode_config.get_module_status_summary()
+        state.debug_info["module_status"] = module_status
 
-        # 降级到 full_mock
-        result = await self._run_full_mock(state, request)
+        # 检查哪些模块可以使用真实实现
+        can_use_real = []
+        must_use_mock = []
+
+        modules_to_check = [
+            "context_builder",
+            "entity_resolver",
+            "website_collector",
+            "news_collector",
+            "company_profile_analyzer",
+            "recent_development_analyzer",
+            "output_assembler",
+        ]
+
+        for module_name in modules_to_check:
+            if self.run_mode_config.should_use_mock_for_module(module_name):
+                must_use_mock.append(module_name)
+            else:
+                can_use_real.append(module_name)
+
+        state.debug_info["can_use_real"] = can_use_real
+        state.debug_info["must_use_mock"] = must_use_mock
+
+        # 如果大部分模块需要 mock，记录警告并降级
+        if len(must_use_mock) > len(can_use_real):
+            state.add_warning(
+                stage=PipelineStage.INIT,
+                warning_type="MostModulesNotImplemented",
+                warning_message=f"Hybrid 模式下多数模块尚未实现 ({len(must_use_mock)}/{len(modules_to_check)})，降级到 full_mock",
+            )
+            result = await self._run_full_mock(state, request)
+        else:
+            state.add_warning(
+                stage=PipelineStage.INIT,
+                warning_type="PartialRealImplementation",
+                warning_message=f"Hybrid 模式：{len(can_use_real)} 个模块使用真实实现，{len(must_use_mock)} 个模块使用 mock",
+            )
+            # 当前阶段先使用 full_mock 作为基础实现
+            # TODO: 后续根据模块状态逐步接入真实实现
+            result = await self._run_full_mock(state, request)
+
         state.stage_timings["total"] = time.time() - start_time
 
         return result
@@ -230,7 +287,7 @@ class AnalysisOrchestrator:
         执行全真实链路分析
 
         在此模式下，所有模块都使用真实实现。
-        当前阶段（v0.0.2）尚不支持此模式，会自动降级。
+        根据配置检查是否所有必需模块都已实现。
 
         未来实现时，将按照以下顺序执行：
         1. context_builder - 构建分析上下文
@@ -253,15 +310,24 @@ class AnalysisOrchestrator:
         start_time = time.time()
         state.debug_info["execution_path"] = "full_pipeline"
 
-        # 当前阶段不支持 full_pipeline 模式
-        state.add_warning(
-            stage=PipelineStage.INIT,
-            warning_type="ModeNotSupported",
-            warning_message="Full pipeline 模式当前阶段不支持，降级到 hybrid",
-        )
+        # 检查是否支持 full_pipeline 模式
+        if not self.run_mode_config._check_full_pipeline_available():
+            module_status = self.run_mode_config.get_module_status_summary()
+            state.add_warning(
+                stage=PipelineStage.INIT,
+                warning_type="ModeNotSupported",
+                warning_message=f"Full pipeline 模式当前不支持（已实现 {module_status['implemented_count']}/{module_status['total_modules']} 个模块），降级到 hybrid",
+            )
+            result = await self._run_hybrid(state, request)
+        else:
+            # TODO: 实现完整的真实链路
+            state.add_warning(
+                stage=PipelineStage.INIT,
+                warning_type="ImplementationPending",
+                warning_message="Full pipeline 实现待完成，暂时降级到 hybrid",
+            )
+            result = await self._run_hybrid(state, request)
 
-        # 降级到 hybrid（再由 hybrid 降级到 mock）
-        result = await self._run_hybrid(state, request)
         state.stage_timings["total"] = time.time() - start_time
 
         return result
@@ -313,13 +379,13 @@ _default_orchestrator: Optional[AnalysisOrchestrator] = None
 
 
 def get_orchestrator(
-    default_run_mode: RunMode = RunMode.FULL_MOCK,
+    default_run_mode: Optional[RunMode] = None,
 ) -> AnalysisOrchestrator:
     """
     获取编排器单例实例
 
     Args:
-        default_run_mode: 默认运行模式
+        default_run_mode: 默认运行模式，如果为 None 则从配置获取
 
     Returns:
         AnalysisOrchestrator: 编排器实例
@@ -328,3 +394,13 @@ def get_orchestrator(
     if _default_orchestrator is None:
         _default_orchestrator = AnalysisOrchestrator(default_run_mode)
     return _default_orchestrator
+
+
+def reset_orchestrator() -> None:
+    """
+    重置编排器单例实例
+
+    用于测试或需要重新加载配置的场景。
+    """
+    global _default_orchestrator
+    _default_orchestrator = None

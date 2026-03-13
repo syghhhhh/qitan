@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from .config import get_run_mode_config
 from .schemas import DueDiligenceOutput, SalesGoalEnum
 from .services.orchestrator import AnalysisRequest, get_orchestrator, RunMode
 
@@ -49,6 +50,7 @@ class AnalyzeRequest(BaseModel):
     )
     target_role: Optional[str] = Field(None, description="用户希望接触的角色")
     extra_context: Optional[str] = Field(None, description="用户补充背景")
+    run_mode: Optional[str] = Field(None, description="运行模式: full_mock, hybrid, full_pipeline")
 
 
 class ErrorResponse(BaseModel):
@@ -62,7 +64,13 @@ class ErrorResponse(BaseModel):
 @app.get("/health")
 async def health_check():
     """健康检查接口"""
-    return {"status": "ok"}
+    config = get_run_mode_config()
+    return {
+        "status": "ok",
+        "default_run_mode": config.default_run_mode.value,
+        "full_pipeline_available": config._check_full_pipeline_available(),
+        "hybrid_available": config._check_hybrid_available(),
+    }
 
 
 @app.post(
@@ -94,6 +102,19 @@ async def analyze(request: AnalyzeRequest) -> DueDiligenceOutput:
                 },
             )
 
+        # 获取运行模式配置
+        config = get_run_mode_config()
+
+        # 解析请求中的运行模式
+        run_mode: Optional[RunMode] = None
+        if request.run_mode:
+            mode_map = {
+                "full_mock": RunMode.FULL_MOCK,
+                "hybrid": RunMode.HYBRID,
+                "full_pipeline": RunMode.FULL_PIPELINE,
+            }
+            run_mode = mode_map.get(request.run_mode.lower())
+
         # 构建 orchestrator 请求
         orchestrator_request = AnalysisRequest(
             company_name=request.company_name.strip(),
@@ -103,7 +124,7 @@ async def analyze(request: AnalyzeRequest) -> DueDiligenceOutput:
             sales_goal=request.sales_goal,
             target_role=request.target_role,
             extra_context=request.extra_context,
-            run_mode=RunMode.FULL_MOCK,  # 当前使用 full_mock 模式
+            run_mode=run_mode,  # 可能为 None，由配置决定默认值
         )
 
         # 通过 orchestrator 统一调用

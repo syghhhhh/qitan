@@ -25,6 +25,9 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
+# 从 config 模块导入 RunMode，避免循环导入
+from ...config.run_mode import RunMode
+
 
 class PipelineStage(str, Enum):
     """分析流程阶段枚举"""
@@ -43,12 +46,7 @@ class PipelineStage(str, Enum):
     FAILED = "failed"  # 失败
 
 
-class RunMode(str, Enum):
-    """运行模式枚举"""
-
-    FULL_MOCK = "full_mock"  # 全流程 mock
-    HYBRID = "hybrid"  # 混合模式：部分真实，部分 mock
-    FULL_PIPELINE = "full_pipeline"  # 全流程真实
+# RunMode 现在从 config.run_mode 导入，此处不再定义
 
 
 class StageError(BaseModel):
