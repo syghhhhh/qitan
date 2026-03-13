@@ -8,7 +8,24 @@
       "Bash(cd H:/qitan && uv venv)",
       "Bash(cd H:/qitan && uv run python --version)",
       "Bash(cd H:/qitan && uv run python -c \"\nfrom backend.app.schemas import \\(\n    Meta, Input, CompanyProfile, RecentDevelopment,\n    DemandSignal, RiskSignal, OrganizationInsights,\n    SalesAssessment, CommunicationStrategy,\n    DueDiligenceOutput, EvidenceReference\n\\)\nprint\\('所有模型导入成功!'\\)\n\")",
-      "Bash(cd H:/qitan && uv pip install pydantic)"
+      "Bash(cd H:/qitan && uv pip install pydantic)",
+      "Bash(uv add:*)",
+      "Bash(uv run:*)",
+      "Bash(sleep 3 && curl -s http://127.0.0.1:8008/health)",
+      "Bash(curl -s -X POST http://127.0.0.1:8008/analyze -H \"Content-Type: application/json\" -d \"{\\\\\"company_name\\\\\": \\\\\"某科技有限公司\\\\\"}\")",
+      "Bash(curl -s http://127.0.0.1:8008/docs | head -c 500)",
+      "Bash(taskkill //F //IM python.exe 2>/dev/null; echo \"Service stopped\")",
+      "Bash(curl -s http://127.0.0.1:8008/ | head -20)",
+      "Bash(curl -s http://127.0.0.1:8008/static/style.css | head -10)",
+      "Bash(curl -s -X POST \"http://127.0.0.1:8008/analyze\" -H \"Content-Type: application/json\" -d \"{\\\\\"company_name\\\\\": \\\\\"测试科技有限公司\\\\\"}\" | head -c 500)",
+      "Bash(curl -s -X POST http://127.0.0.1:8008/analyze -H \"Content-Type: application/json\" --data-raw \"{\\\\\"company_name\\\\\":\\\\\"测试科技公司\\\\\"}\")",
+      "Bash(powershell -Command \"Invoke-RestMethod -Uri 'http://127.0.0.1:8008/analyze' -Method POST -ContentType 'application/json' -Body '{\\\\\"company_name\\\\\":\\\\\"测试公司\\\\\"}' | ConvertTo-Json -Depth 5\")",
+      "Bash(taskkill /F /IM python.exe 2>/dev/null || true)",
+      "Bash(curl -s http://127.0.0.1:8008/ | head -50)",
+      "Bash(curl -s -X POST http://127.0.0.1:8008/analyze -H \"Content-Type: application/json\" -d '{\"company_name\": \"测试科技有限公司\"}')",
+      "Bash(curl -s -X POST \"http://127.0.0.1:8008/analyze\" \\\\\n  -H \"Content-Type: application/json\" \\\\\n  -H \"Accept: application/json\" \\\\\n  -d \"{\\\\\"company_name\\\\\": \\\\\"测试科技有限公司\\\\\"}\")",
+      "Bash(netstat -ano | grep 8008)",
+      "Bash(tasklist | grep 45604)"
     ]
   }
 }

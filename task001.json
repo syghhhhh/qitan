@@ -1,6 +1,6 @@
 {
   "project": "qitan",
-  "description": "企业背调智能体 MVP 项目。面向企业商务岗位，对企业进行公开信息背调，输出企业画像、需求信号、风险提示、联系人建议和沟通话术。技术栈：Python + FastAPI + uv 管理环境。基于 discuss001.md - discuss004.md 的产品规划落地开发。",
+  "description": "企业背调智能体 MVP 项目。面向企业商务岗位，对企业进行公开信息背调，输出企业画像、需求信号、风险提示、联系人建议和沟通话术。技术栈：Python + FastAPI + uv 管理环境。基于 discuss001_001.md - discuss001_004.md 的产品规划落地开发。",
   "tasks": [
     {
       "id": 1,
@@ -33,14 +33,14 @@
     {
       "id": 3,
       "title": "定义企业背调核心数据模型 Schema",
-      "description": "基于 discuss003.md 的 JSON Schema 定义 Python 数据模型，确保与产品规划一致。",
+      "description": "基于 discuss001_003.md 的 JSON Schema 定义 Python 数据模型，确保与产品规划一致。",
       "steps": [
         "创建 backend/app/schemas/common.py 定义 Meta、Input 等基础模型。",
         "创建 backend/app/schemas/company.py 定义 CompanyProfile、RecentDevelopment 模型。",
         "创建 backend/app/schemas/analysis.py 定义 DemandSignal、RiskSignal、OrganizationInsights 模型。",
         "创建 backend/app/schemas/assessment.py 定义 SalesAssessment、CommunicationStrategy 模型。",
         "创建 backend/app/schemas/output.py 定义 EvidenceReference 和完整输出模型 DueDiligenceOutput。",
-        "确保所有模型字段与 discuss003.md 的 JSON Schema 完全一致。",
+        "确保所有模型字段与 discuss001_003.md 的 JSON Schema 完全一致。",
         "在 schemas/__init__.py 中统一导出所有模型。"
       ],
       "passes": true
@@ -48,7 +48,7 @@
     {
       "id": 4,
       "title": "定义字段枚举字典",
-      "description": "基于 discuss004.md 定义所有枚举值，确保前后端统一口径。",
+      "description": "基于 discuss001_004.md 定义所有枚举值，确保前后端统一口径。",
       "steps": [
         "创建 backend/app/schemas/enums.py 定义所有枚举类。",
         "定义 SalesGoal 枚举：lead_generation、first_touch、meeting_prep、solution_pitch、account_planning、other。",
@@ -64,7 +64,7 @@
     {
       "id": 5,
       "title": "定义评分规则配置",
-      "description": "基于 discuss004.md 的评分规则表定义评分配置，用于后续规则引擎。",
+      "description": "基于 discuss001_004.md 的评分规则表定义评分配置，用于后续规则引擎。",
       "steps": [
         "创建 backend/app/config/scoring.py 存放评分配置。",
         "定义 ICP 匹配度评分规则（0-35分）：行业匹配(0-12)、企业规模匹配(0-8)、业务场景匹配(0-10)、企业类型匹配(0-5)。",
@@ -79,7 +79,7 @@
     {
       "id": 6,
       "title": "创建三个核心 Prompt 模板",
-      "description": "基于 discuss003.md 的 Prompt 模板定义，用于后续 LLM 调用。",
+      "description": "基于 discuss001_003.md 的 Prompt 模板定义，用于后续 LLM 调用。",
       "steps": [
         "创建 backend/app/prompts/extraction.py 存放企业信息抽取 Prompt。",
         "实现 Prompt 1：企业信息抽取 System Prompt 和 User Prompt Template。",
@@ -118,13 +118,13 @@
     {
       "id": 9,
       "title": "实现标准 Mock 分析数据",
-      "description": "基于 discuss003.md 的最小输出样例创建 Mock 分析逻辑，确保返回数据结构符合 Schema。",
+      "description": "基于 discuss001_003.md 的最小输出样例创建 Mock 分析逻辑，确保返回数据结构符合 Schema。",
       "steps": [
         "创建 backend/app/services/mock_analyzer.py。",
         "实现 get_mock_analysis 函数，返回完整的 DueDiligenceOutput 结构。",
         "Mock 数据包含：meta、input、company_profile、recent_developments、demand_signals、organization_insights、risk_signals、sales_assessment、communication_strategy、evidence_references。",
         "根据不同企业名称关键词（如科技、制造、教育）返回不同分支的 Mock 数据。",
-        "确保 Mock 数据符合 discuss003.md 第590-745行的样例格式。"
+        "确保 Mock 数据符合 discuss001_003.md 第590-745行的样例格式。"
       ],
       "passes": true
     },
@@ -212,8 +212,8 @@
         "说明最小功能范围：输入企业名称，输出背调报告和话术建议。",
         "写明 uv 环境管理、依赖安装、服务启动命令。",
         "写明 API 接口说明：GET /health、POST /analyze。",
-        "写明数据模型说明，引用 discuss003.md 的 Schema。",
-        "写明评分规则说明，引用 discuss004.md 的评分表。"
+        "写明数据模型说明，引用 discuss001_003.md 的 Schema。",
+        "写明评分规则说明，引用 discuss001_004.md 的评分表。"
       ],
       "passes": true
     },
