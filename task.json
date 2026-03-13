@@ -34,7 +34,7 @@
         "创建目录后不影响现有项目基础运行"
       ],
       "depends_on": [],
-      "passes": false
+      "passes": true
     },
     {
       "id": 2,
