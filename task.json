@@ -440,7 +440,7 @@
         "不阻塞最小分析闭环落地"
       ],
       "depends_on": [1],
-      "passes": false
+      "passes": true
     },
     {
       "id": 20,
