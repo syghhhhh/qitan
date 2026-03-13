@@ -56,7 +56,7 @@
         "可被后续 orchestrator 直接使用"
       ],
       "depends_on": [1],
-      "passes": false
+      "passes": true
     },
     {
       "id": 3,
