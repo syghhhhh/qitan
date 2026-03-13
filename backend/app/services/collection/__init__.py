@@ -30,6 +30,11 @@ from .source_router import (
     get_source_router,
     route_sources,
 )
+from .news_collector import (
+    NewsCollector,
+    collect_news,
+    get_news_collector,
+)
 from .website_collector import (
     WebsiteCollector,
     collect_website,
@@ -58,4 +63,8 @@ __all__ = [
     "WebsiteCollector",
     "get_website_collector",
     "collect_website",
+    # 新闻采集器
+    "NewsCollector",
+    "get_news_collector",
+    "collect_news",
 ]

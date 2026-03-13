@@ -211,7 +211,7 @@
         "输出结构与 website_collector 一致"
       ],
       "depends_on": [6, 7],
-      "passes": false
+      "passes": true
     },
     {
       "id": 10,
