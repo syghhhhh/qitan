@@ -6,3 +6,15 @@
 """
 
 from __future__ import annotations
+
+from .company_profile_analyzer import (
+    CompanyProfileAnalyzer,
+    analyze_company_profile,
+    get_company_profile_analyzer,
+)
+
+__all__ = [
+    "CompanyProfileAnalyzer",
+    "analyze_company_profile",
+    "get_company_profile_analyzer",
+]
