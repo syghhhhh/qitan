@@ -25,7 +25,8 @@
       "Bash(curl -s -X POST http://127.0.0.1:8008/analyze -H \"Content-Type: application/json\" -d '{\"company_name\": \"测试科技有限公司\"}')",
       "Bash(curl -s -X POST \"http://127.0.0.1:8008/analyze\" \\\\\n  -H \"Content-Type: application/json\" \\\\\n  -H \"Accept: application/json\" \\\\\n  -d \"{\\\\\"company_name\\\\\": \\\\\"测试科技有限公司\\\\\"}\")",
       "Bash(netstat -ano | grep 8008)",
-      "Bash(tasklist | grep 45604)"
+      "Bash(tasklist | grep 45604)",
+      "Bash(cd H:/qitan/backend && python -c \"from app.services import *; print\\('Import OK'\\)\")"
     ]
   }
 }

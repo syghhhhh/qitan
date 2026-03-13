@@ -44,6 +44,7 @@
 1. 更新 `task.json` 中对应任务的 `passes` 字段为 `true`
 2. 执行 Git 提交
 3. 推送到远程仓库
+4. 禁止开始执行下一个任务
 
 ### Git 提交规范
 
@@ -67,6 +68,11 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 - `refactor`: 重构
 - `test`: 测试相关
 - `chore`: 构建/工具相关
+
+**subject 内容**:
+- 版本号, task号
+- 本次提交的内容概要
+- 示例: v0.0.1 Task 3 - 定义枚举字典用于前端展示映射
 
 **提交时机**：
 - 每完成一个 task.json 中的任务后提交
