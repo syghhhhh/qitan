@@ -259,7 +259,7 @@
         "候选事实可追溯到来源证据"
       ],
       "depends_on": [10],
-      "passes": false
+      "passes": true
     },
     {
       "id": 12,
