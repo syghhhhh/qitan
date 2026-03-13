@@ -393,7 +393,7 @@
         "服务主入口收敛到 orchestrator"
       ],
       "depends_on": [3, 15],
-      "passes": false
+      "passes": true
     },
     {
       "id": 18,

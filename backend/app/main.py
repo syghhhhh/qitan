@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .schemas import DueDiligenceOutput, SalesGoalEnum
-from .services.mock_analyzer import get_mock_analysis
+from .services.orchestrator import AnalysisRequest, get_orchestrator, RunMode
 
 # 前端静态文件目录
 FRONTEND_DIR = Path(__file__).parent.parent.parent / "frontend"
@@ -94,16 +94,21 @@ async def analyze(request: AnalyzeRequest) -> DueDiligenceOutput:
                 },
             )
 
-        # 调用 Mock 分析逻辑
-        result = get_mock_analysis(
+        # 构建 orchestrator 请求
+        orchestrator_request = AnalysisRequest(
             company_name=request.company_name.strip(),
-            user_company_product=request.user_company_product,
             company_website=request.company_website,
+            user_company_product=request.user_company_product,
             user_target_customer_profile=request.user_target_customer_profile,
             sales_goal=request.sales_goal,
             target_role=request.target_role,
             extra_context=request.extra_context,
+            run_mode=RunMode.FULL_MOCK,  # 当前使用 full_mock 模式
         )
+
+        # 通过 orchestrator 统一调用
+        orchestrator = get_orchestrator()
+        result = await orchestrator.analyze(orchestrator_request)
 
         return result
 
