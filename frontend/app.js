@@ -15,16 +15,29 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // 收集表单数据
+        // 收集表单数据（不发送 null，让后端使用默认值）
         const requestData = {
-            company_name: companyName,
-            company_website: document.getElementById('company-website').value.trim() || null,
-            user_company_product: document.getElementById('user-product').value.trim() || null,
-            user_target_customer_profile: document.getElementById('target-customer').value.trim() || null,
-            sales_goal: document.getElementById('sales-goal').value || null,
-            target_role: document.getElementById('target-role').value.trim() || null,
-            extra_context: document.getElementById('extra-context').value.trim() || null
+            company_name: companyName
         };
+
+        // 只添加有值的字段
+        const website = document.getElementById('company-website').value.trim();
+        if (website) requestData.company_website = website;
+
+        const product = document.getElementById('user-product').value.trim();
+        if (product) requestData.user_company_product = product;
+
+        const targetCustomer = document.getElementById('target-customer').value.trim();
+        if (targetCustomer) requestData.user_target_customer_profile = targetCustomer;
+
+        const salesGoal = document.getElementById('sales-goal').value;
+        if (salesGoal) requestData.sales_goal = salesGoal;
+
+        const targetRole = document.getElementById('target-role').value.trim();
+        if (targetRole) requestData.target_role = targetRole;
+
+        const extraContext = document.getElementById('extra-context').value.trim();
+        if (extraContext) requestData.extra_context = extraContext;
 
         // 显示加载状态
         setLoading(true);
@@ -43,7 +56,26 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await response.json();
 
             if (!response.ok) {
-                throw new Error(result.detail || '分析请求失败');
+                // 解析错误信息
+                let errorMsg = '分析请求失败';
+                if (result.detail) {
+                    if (typeof result.detail === 'string') {
+                        errorMsg = result.detail;
+                    } else if (result.detail.message) {
+                        // 自定义错误格式
+                        errorMsg = result.detail.message;
+                    } else if (Array.isArray(result.detail)) {
+                        // FastAPI 验证错误格式
+                        const errors = result.detail.map(e => {
+                            const field = e.loc ? e.loc.join(' -> ') : '未知字段';
+                            return `${field}: ${e.msg}`;
+                        });
+                        errorMsg = errors.join('; ');
+                    } else {
+                        errorMsg = JSON.stringify(result.detail);
+                    }
+                }
+                throw new Error(errorMsg);
             }
 
             // 渲染结果
