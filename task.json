@@ -326,7 +326,7 @@
         "结果结构可被 output_assembler 直接使用"
       ],
       "depends_on": [12],
-      "passes": false
+      "passes": true
     },
     {
       "id": 15,

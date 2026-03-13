@@ -12,9 +12,17 @@ from .company_profile_analyzer import (
     analyze_company_profile,
     get_company_profile_analyzer,
 )
+from .recent_development_analyzer import (
+    RecentDevelopmentAnalyzer,
+    analyze_recent_developments,
+    get_recent_development_analyzer,
+)
 
 __all__ = [
     "CompanyProfileAnalyzer",
     "analyze_company_profile",
     "get_company_profile_analyzer",
+    "RecentDevelopmentAnalyzer",
+    "analyze_recent_developments",
+    "get_recent_development_analyzer",
 ]
