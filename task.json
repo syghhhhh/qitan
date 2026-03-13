@@ -167,7 +167,7 @@
         "便于后续继续扩展 jobs、risk 等采集器"
       ],
       "depends_on": [3],
-      "passes": false
+      "passes": true
     },
     {
       "id": 8,
