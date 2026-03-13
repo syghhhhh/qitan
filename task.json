@@ -281,7 +281,8 @@
         "保留来源与基础置信度"
       ],
       "depends_on": [10],
-      "passes": false
+      "passes": true,
+      "status": "completed"
     },
     {
       "id": 13,

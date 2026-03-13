@@ -6,7 +6,7 @@
 
 模块组成：
 - company_profile_extractor: 企业画像抽取器
-- development_extractor: 近期动态抽取器（待实现）
+- development_extractor: 近期动态抽取器
 """
 
 from __future__ import annotations
@@ -16,9 +16,19 @@ from .company_profile_extractor import (
     extract_company_profile,
     get_company_profile_extractor,
 )
+from .development_extractor import (
+    DevelopmentExtractor,
+    extract_developments,
+    get_development_extractor,
+)
 
 __all__ = [
+    # 企业画像抽取器
     "CompanyProfileExtractor",
     "extract_company_profile",
     "get_company_profile_extractor",
+    # 近期动态抽取器
+    "DevelopmentExtractor",
+    "extract_developments",
+    "get_development_extractor",
 ]
