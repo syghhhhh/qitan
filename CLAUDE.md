@@ -16,12 +16,6 @@
 - Pydantic
 - uv（环境管理）
 
-**产品规划文档**：
-- `discuss001.md`：项目拆解与商务背调框架
-- `discuss002.md`：MVP 方案设计
-- `discuss003.md`：JSON Schema + Prompt 模板
-- `discuss004.md`：字段枚举字典 + 评分规则表
-
 ---
 
 ## 开发流程规则
@@ -101,94 +95,6 @@ git status && git add <files> && git commit -m "..." && git push origin main
 - 函数名：小写下划线 `snake_case`
 - 常量：大写下划线 `UPPER_CASE`
 
-### 目录结构规范
-
-```
-backend/app/
-├── __init__.py
-├── main.py              # FastAPI 应用入口
-├── schemas/             # Pydantic 数据模型
-│   ├── __init__.py
-│   ├── common.py        # 基础模型
-│   ├── company.py       # 企业相关
-│   ├── analysis.py      # 分析相关
-│   ├── assessment.py    # 判断相关
-│   ├── output.py        # 输出模型
-│   └── enums.py         # 枚举定义
-├── prompts/             # Prompt 模板
-│   ├── __init__.py
-│   ├── extraction.py    # 信息抽取
-│   ├── analysis.py      # 商务分析
-│   └── communication.py # 话术生成
-├── services/            # 业务逻辑
-│   ├── __init__.py
-│   ├── orchestrator/
-│   │   ├── __init__.py
-│   │   ├── analysis_orchestrator.py
-│   │   └── pipeline_state.py
-│   ├── context/
-│   │   ├── __init__.py
-│   │   └── context_builder.py
-│   ├── resolution/
-│   │   ├── __init__.py
-│   │   └── entity_resolver.py
-│   ├── collection/
-│   │   ├── __init__.py
-│   │   ├── base.py
-│   │   ├── source_router.py
-│   │   ├── website_collector.py
-│   │   ├── news_collector.py
-│   │   ├── jobs_collector.py
-│   │   ├── company_registry_collector.py
-│   │   └── risk_collector.py
-│   ├── preprocessing/
-│   │   ├── __init__.py
-│   │   ├── evidence_cleaner.py
-│   │   ├── evidence_deduplicator.py
-│   │   ├── evidence_normalizer.py
-│   │   └── evidence_ranker.py
-│   ├── extraction/
-│   │   ├── __init__.py
-│   │   ├── company_profile_extractor.py
-│   │   ├── development_extractor.py
-│   │   ├── demand_signal_extractor.py
-│   │   ├── risk_signal_extractor.py
-│   │   ├── organization_extractor.py
-│   │   └── evidence_reference_extractor.py
-│   ├── analysis/
-│   │   ├── __init__.py
-│   │   ├── company_profile_analyzer.py
-│   │   ├── recent_development_analyzer.py
-│   │   ├── demand_signal_analyzer.py
-│   │   ├── organization_analyzer.py
-│   │   ├── risk_analyzer.py
-│   │   └── sales_assessment_analyzer.py
-│   ├── scoring/
-│   │   ├── __init__.py
-│   │   ├── scoring_engine.py
-│   │   └── scoring_mapper.py
-│   ├── generation/
-│   │   ├── __init__.py
-│   │   ├── communication_strategy_generator.py
-│   │   └── next_step_generator.py
-│   ├── assembly/
-│   │   ├── __init__.py
-│   │   ├── evidence_reference_builder.py
-│   │   ├── output_assembler.py
-│   │   └── output_validator.py
-│   ├── llm/
-│   │   ├── __init__.py
-│   │   ├── llm_client.py
-│   │   ├── prompt_renderer.py
-│   │   └── structured_generation.py
-│   └── mock/
-│      ├── __init__.py
-│      └── mock_analyzer.py
-└── config/              # 配置文件
-    ├── __init__.py
-    └── scoring.py       # 评分规则
-```
-
 ---
 
 ## 自动化执行指南
@@ -217,7 +123,7 @@ backend/app/
 
 ## 参考资源
 
-- **产品规划**：`discuss001.md` - `discuss004.md`
+- **产品规划**：`think_log/对应开发版本/*.md`
 - **任务清单**：`task.json`
 - **FastAPI 文档**：https://fastapi.tiangolo.com/
 - **Pydantic 文档**：https://docs.pydantic.dev/
