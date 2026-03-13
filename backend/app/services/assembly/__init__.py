@@ -12,9 +12,23 @@ from .output_assembler import (
     get_output_assembler,
     assemble_output,
 )
+from .output_validator import (
+    OutputValidator,
+    ValidationResult,
+    ValidationWarning,
+    get_output_validator,
+    validate_output,
+)
 
 __all__ = [
+    # Assembler
     "OutputAssembler",
     "get_output_assembler",
     "assemble_output",
+    # Validator
+    "OutputValidator",
+    "ValidationResult",
+    "ValidationWarning",
+    "get_output_validator",
+    "validate_output",
 ]

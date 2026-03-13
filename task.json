@@ -370,7 +370,7 @@
         "可在 orchestrator 最终返回前调用"
       ],
       "depends_on": [15],
-      "passes": false
+      "passes": true
     },
     {
       "id": 17,
