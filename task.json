@@ -78,7 +78,7 @@
         "full_mock 模式可稳定返回结果"
       ],
       "depends_on": [1, 2],
-      "passes": false
+      "passes": true
     },
     {
       "id": 4,

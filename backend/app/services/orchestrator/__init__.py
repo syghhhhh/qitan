@@ -19,8 +19,14 @@ from .pipeline_state import (
     StageError,
     StageWarning,
 )
+from .analysis_orchestrator import (
+    AnalysisOrchestrator,
+    AnalysisRequest,
+    get_orchestrator,
+)
 
 __all__ = [
+    # pipeline_state
     "AnalysisResult",
     "CandidateFact",
     "PipelineStage",
@@ -31,4 +37,8 @@ __all__ = [
     "RunMode",
     "StageError",
     "StageWarning",
+    # analysis_orchestrator
+    "AnalysisOrchestrator",
+    "AnalysisRequest",
+    "get_orchestrator",
 ]
