@@ -7,7 +7,7 @@
 模块组成：
 - base.py: 定义统一的 collector 接口协议
 - source_router.py: 数据源路由器，决定启用哪些数据源
-- website_collector.py: 企业官网采集器（Task 8）
+- website_collector.py: 企业官网采集器
 - news_collector.py: 新闻资讯采集器（Task 9）
 """
 
@@ -30,6 +30,11 @@ from .source_router import (
     get_source_router,
     route_sources,
 )
+from .website_collector import (
+    WebsiteCollector,
+    collect_website,
+    get_website_collector,
+)
 
 __all__ = [
     # 基础类型
@@ -49,4 +54,8 @@ __all__ = [
     "SourceRouter",
     "get_source_router",
     "route_sources",
+    # 官网采集器
+    "WebsiteCollector",
+    "get_website_collector",
+    "collect_website",
 ]
