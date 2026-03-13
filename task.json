@@ -1,0 +1,467 @@
+{
+  "project": "qitan",
+  "version": "v0.0.2",
+  "description": "基于 services 分层重构设计，对后端分析链路进行结构化改造，建立 orchestrator 驱动的统一分析入口，保留 full_mock 能力，并优先落地企业画像与近期动态的最小真实闭环。",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "创建 services 分层目录结构",
+      "description": "在 backend/app/services 下创建新的分层目录结构，包括 orchestrator、context、resolution、collection、preprocessing、extraction、analysis、scoring、generation、assembly、llm、mock 等模块目录。该任务目标是完成 v0.0.2 架构骨架搭建，为后续功能迁移和模块实现提供统一位置和边界。",
+      "priority": "P0",
+      "type": "refactor",
+      "targets": [
+        "backend/app/services/orchestrator/",
+        "backend/app/services/context/",
+        "backend/app/services/resolution/",
+        "backend/app/services/collection/",
+        "backend/app/services/preprocessing/",
+        "backend/app/services/extraction/",
+        "backend/app/services/analysis/",
+        "backend/app/services/scoring/",
+        "backend/app/services/generation/",
+        "backend/app/services/assembly/",
+        "backend/app/services/llm/",
+        "backend/app/services/mock/"
+      ],
+      "deliverables": [
+        "完成 services 新目录结构创建",
+        "各目录下包含基础 __init__.py 文件",
+        "工程可以正常启动且不因目录拆分报错"
+      ],
+      "acceptance_criteria": [
+        "services 分层目录与当前设计一致",
+        "目录命名清晰且职责边界明确",
+        "创建目录后不影响现有项目基础运行"
+      ],
+      "depends_on": [],
+      "passes": false
+    },
+    {
+      "id": 2,
+      "title": "实现 PipelineState 统一运行时状态容器",
+      "description": "新增 orchestrator/pipeline_state.py，用于统一记录分析链路中的请求输入、中间状态、错误信息和最终输出。该状态对象将作为 orchestrator 在各阶段之间传递数据的核心容器，避免模块之间直接耦合。",
+      "priority": "P0",
+      "type": "feature",
+      "targets": [
+        "backend/app/services/orchestrator/pipeline_state.py"
+      ],
+      "deliverables": [
+        "定义 PipelineState 数据结构",
+        "支持阶段性写入与读取",
+        "支持错误记录与最终输出存储"
+      ],
+      "acceptance_criteria": [
+        "至少支持 request、context、resolved_company、raw_evidence、processed_evidence、candidate_facts、analysis_results、final_output、errors 等字段",
+        "字段命名清晰，方便调试与日志输出",
+        "可被后续 orchestrator 直接使用"
+      ],
+      "depends_on": [1],
+      "passes": false
+    },
+    {
+      "id": 3,
+      "title": "实现 AnalysisOrchestrator 主流程编排",
+      "description": "新增 orchestrator/analysis_orchestrator.py，作为后端分析服务统一入口。负责按顺序调用 context、resolution、collection、preprocessing、extraction、analysis、assembly 等模块，并结合运行模式决定走 mock、hybrid 或 full pipeline 路径。",
+      "priority": "P0",
+      "type": "feature",
+      "targets": [
+        "backend/app/services/orchestrator/analysis_orchestrator.py"
+      ],
+      "deliverables": [
+        "提供统一 analyze(request) 方法",
+        "串联完整分析流程主干",
+        "支持 full_mock 和 hybrid 的基础分支控制"
+      ],
+      "acceptance_criteria": [
+        "API 层可通过 orchestrator 获取分析结果",
+        "主流程失败时支持错误记录和部分降级",
+        "full_mock 模式可稳定返回结果"
+      ],
+      "depends_on": [1, 2],
+      "passes": false
+    },
+    {
+      "id": 4,
+      "title": "迁移并保留 mock_analyzer 能力",
+      "description": "将现有 mock 分析能力迁移到 backend/app/services/mock/mock_analyzer.py 中，并通过 orchestrator 接入，作为 v0.0.2 的默认稳定兜底路径。该任务确保在真实链路尚未完全落地前，系统依然可正常返回 mock 结果。",
+      "priority": "P0",
+      "type": "refactor",
+      "targets": [
+        "backend/app/services/mock/mock_analyzer.py"
+      ],
+      "deliverables": [
+        "mock_analyzer 完成迁移",
+        "保留原有 mock 输出能力",
+        "可被 orchestrator 调用"
+      ],
+      "acceptance_criteria": [
+        "full_mock 模式下系统可正常工作",
+        "mock 输出结构与现有接口兼容",
+        "迁移后无功能丢失"
+      ],
+      "depends_on": [1],
+      "passes": false
+    },
+    {
+      "id": 5,
+      "title": "实现 context_builder",
+      "description": "新增 context/context_builder.py，将 API 请求转换为统一 AnalysisContext。上下文中需归一化输入企业信息、销售目标、目标角色等字段，作为后续 resolution 和 collection 的输入基础。",
+      "priority": "P1",
+      "type": "feature",
+      "targets": [
+        "backend/app/services/context/context_builder.py"
+      ],
+      "deliverables": [
+        "AnalysisContext 构建逻辑",
+        "请求字段标准化逻辑",
+        "缺省值处理逻辑"
+      ],
+      "acceptance_criteria": [
+        "支持 company_name、company_website、sales_goal、target_role 等关键字段",
+        "上下文结构统一且便于后续模块复用",
+        "缺失字段不会导致流程崩溃"
+      ],
+      "depends_on": [3],
+      "passes": false
+    },
+    {
+      "id": 6,
+      "title": "实现 entity_resolver 最小版本",
+      "description": "新增 resolution/entity_resolver.py，根据 company_name 和 company_website 产出标准化企业实体信息，包括标准名、域名、别名和基础置信度。该模块为采集与分析提供统一企业标识。",
+      "priority": "P1",
+      "type": "feature",
+      "targets": [
+        "backend/app/services/resolution/entity_resolver.py"
+      ],
+      "deliverables": [
+        "ResolvedCompany 数据结构",
+        "企业实体标准化逻辑",
+        "低信息场景降级逻辑"
+      ],
+      "acceptance_criteria": [
+        "至少输出 standard_name、domain、aliases、confidence",
+        "可处理仅有公司名或仅有官网的场景",
+        "无法可靠识别时可安全降级"
+      ],
+      "depends_on": [5],
+      "passes": false
+    },
+    {
+      "id": 7,
+      "title": "定义 collection 基础接口与 source_router",
+      "description": "新增 collection/base.py 和 collection/source_router.py，统一 collector 的输入输出协议，并根据上下文或配置决定启用哪些数据源。v0.0.2 先支持 website 与 news 两类 source。",
+      "priority": "P1",
+      "type": "feature",
+      "targets": [
+        "backend/app/services/collection/base.py",
+        "backend/app/services/collection/source_router.py"
+      ],
+      "deliverables": [
+        "统一 collector 接口",
+        "source_router 路由逻辑",
+        "基础 source 配置规则"
+      ],
+      "acceptance_criteria": [
+        "collector 的输入输出结构统一",
+        "source_router 可返回 website 和 news 两类 source",
+        "便于后续继续扩展 jobs、risk 等采集器"
+      ],
+      "depends_on": [3],
+      "passes": false
+    },
+    {
+      "id": 8,
+      "title": "实现 website_collector 最小版本",
+      "description": "新增 collection/website_collector.py，从企业官网采集基础信息，输出 RawEvidence 列表。v0.0.2 只要求实现最小能力，能够获取官网内容或 mockable 内容作为后续证据输入。",
+      "priority": "P1",
+      "type": "feature",
+      "targets": [
+        "backend/app/services/collection/website_collector.py"
+      ],
+      "deliverables": [
+        "官网采集器最小实现",
+        "RawEvidence 结构输出",
+        "无官网场景跳过逻辑"
+      ],
+      "acceptance_criteria": [
+        "输出证据至少包含 source_type、url、title、content、collected_at",
+        "无官网时返回空结果而不是抛异常",
+        "可被 orchestrator 纳入采集流程"
+      ],
+      "depends_on": [6, 7],
+      "passes": false
+    },
+    {
+      "id": 9,
+      "title": "实现 news_collector 最小版本",
+      "description": "新增 collection/news_collector.py，根据企业名称采集相关新闻证据，输出 RawEvidence 列表。当前阶段允许使用 mockable 数据源，但接口结构需符合真实链路设计。",
+      "priority": "P1",
+      "type": "feature",
+      "targets": [
+        "backend/app/services/collection/news_collector.py"
+      ],
+      "deliverables": [
+        "新闻采集器最小实现",
+        "新闻证据结构输出",
+        "空结果场景兼容处理"
+      ],
+      "acceptance_criteria": [
+        "支持基于企业名返回新闻类证据",
+        "空数据不会导致主流程中断",
+        "输出结构与 website_collector 一致"
+      ],
+      "depends_on": [6, 7],
+      "passes": false
+    },
+    {
+      "id": 10,
+      "title": "实现 preprocessing 基础链路",
+      "description": "新增 preprocessing/evidence_cleaner.py、evidence_deduplicator.py、evidence_normalizer.py、evidence_ranker.py，对原始证据执行清洗、去重、标准化与排序。该任务目标是形成统一 ProcessedEvidence，为 extraction 提供稳定输入。",
+      "priority": "P1",
+      "type": "feature",
+      "targets": [
+        "backend/app/services/preprocessing/evidence_cleaner.py",
+        "backend/app/services/preprocessing/evidence_deduplicator.py",
+        "backend/app/services/preprocessing/evidence_normalizer.py",
+        "backend/app/services/preprocessing/evidence_ranker.py"
+      ],
+      "deliverables": [
+        "证据清洗逻辑",
+        "证据去重逻辑",
+        "证据标准化逻辑",
+        "证据排序逻辑"
+      ],
+      "acceptance_criteria": [
+        "支持 clean -> dedupe -> normalize -> rank 的顺序执行",
+        "输出统一 ProcessedEvidence 结构",
+        "重复新闻可基础去重，日期和 URL 可标准化"
+      ],
+      "depends_on": [8, 9],
+      "passes": false
+    },
+    {
+      "id": 11,
+      "title": "实现 company_profile_extractor 最小版本",
+      "description": "新增 extraction/company_profile_extractor.py，从处理后的官网和新闻证据中抽取公司名称、行业、主营业务、产品或服务等企业画像候选事实，并保留 evidence reference。",
+      "priority": "P1",
+      "type": "feature",
+      "targets": [
+        "backend/app/services/extraction/company_profile_extractor.py"
+      ],
+      "deliverables": [
+        "企业画像候选事实抽取逻辑",
+        "candidate facts 输出结构",
+        "evidence reference 保留逻辑"
+      ],
+      "acceptance_criteria": [
+        "可从多类证据中抽取 company profile 候选项",
+        "输出结构化候选事实",
+        "候选事实可追溯到来源证据"
+      ],
+      "depends_on": [10],
+      "passes": false
+    },
+    {
+      "id": 12,
+      "title": "实现 development_extractor 最小版本",
+      "description": "新增 extraction/development_extractor.py，从处理后的新闻及其他证据中抽取近期事件候选项，形成 recent developments 的结构化基础数据。",
+      "priority": "P1",
+      "type": "feature",
+      "targets": [
+        "backend/app/services/extraction/development_extractor.py"
+      ],
+      "deliverables": [
+        "近期动态候选项抽取逻辑",
+        "事件结构化输出",
+        "候选置信度基础字段"
+      ],
+      "acceptance_criteria": [
+        "候选项至少包含 event_type、date、summary、source",
+        "支持多条候选事实输出",
+        "保留来源与基础置信度"
+      ],
+      "depends_on": [10],
+      "passes": false
+    },
+    {
+      "id": 13,
+      "title": "实现 company_profile_analyzer",
+      "description": "新增 analysis/company_profile_analyzer.py，对企业画像候选事实进行归并、冲突消解和结果结构化，生成统一 company_profile 输出。",
+      "priority": "P1",
+      "type": "feature",
+      "targets": [
+        "backend/app/services/analysis/company_profile_analyzer.py"
+      ],
+      "deliverables": [
+        "候选事实聚合逻辑",
+        "基础冲突消解逻辑",
+        "统一 company_profile 输出结构"
+      ],
+      "acceptance_criteria": [
+        "可合并多来源 company profile 候选事实",
+        "可处理基础冲突和重复值",
+        "输出可直接供 assembly 使用"
+      ],
+      "depends_on": [11],
+      "passes": false
+    },
+    {
+      "id": 14,
+      "title": "实现 recent_development_analyzer",
+      "description": "新增 analysis/recent_development_analyzer.py，对近期动态候选项进行筛选、去重、排序和统一结构化，生成 recent_developments 输出。",
+      "priority": "P1",
+      "type": "feature",
+      "targets": [
+        "backend/app/services/analysis/recent_development_analyzer.py"
+      ],
+      "deliverables": [
+        "近期动态候选项筛选逻辑",
+        "动态去重与排序逻辑",
+        "统一 recent_developments 输出结构"
+      ],
+      "acceptance_criteria": [
+        "可输出排序后的近期动态列表",
+        "可合并相似事件并去重",
+        "结果结构可被 output_assembler 直接使用"
+      ],
+      "depends_on": [12],
+      "passes": false
+    },
+    {
+      "id": 15,
+      "title": "实现 output_assembler",
+      "description": "新增 assembly/output_assembler.py，将 analysis 层输出组装为统一 API 响应结构，并兼容 full_mock、hybrid 和 partial result 场景。",
+      "priority": "P0",
+      "type": "feature",
+      "targets": [
+        "backend/app/services/assembly/output_assembler.py"
+      ],
+      "deliverables": [
+        "最终输出组装逻辑",
+        "统一响应结构映射",
+        "partial result 兼容逻辑"
+      ],
+      "acceptance_criteria": [
+        "可将 company_profile 和 recent_developments 正确组装到响应中",
+        "兼容 mock 和真实链路结果",
+        "与现有 schema 保持一致或兼容"
+      ],
+      "depends_on": [13, 14],
+      "passes": false
+    },
+    {
+      "id": 16,
+      "title": "实现 output_validator 最小版本",
+      "description": "新增 assembly/output_validator.py，对 output_assembler 生成的结果进行基础结构校验、字段校验和 warning 输出，确保返回结果稳定。",
+      "priority": "P1",
+      "type": "feature",
+      "targets": [
+        "backend/app/services/assembly/output_validator.py"
+      ],
+      "deliverables": [
+        "输出结构校验逻辑",
+        "字段合法性校验逻辑",
+        "warning 生成逻辑"
+      ],
+      "acceptance_criteria": [
+        "支持基础必填字段和类型校验",
+        "部分字段缺失时可 warning 而不是直接失败",
+        "可在 orchestrator 最终返回前调用"
+      ],
+      "depends_on": [15],
+      "passes": false
+    },
+    {
+      "id": 17,
+      "title": "API 层接入 orchestrator",
+      "description": "调整 backend API 层调用方式，不再在接口中直接组织服务逻辑，而是统一通过 AnalysisOrchestrator.analyze(request) 获取结果，降低接口层复杂度。",
+      "priority": "P0",
+      "type": "refactor",
+      "targets": [
+        "backend/app/api/",
+        "backend/app/routes/"
+      ],
+      "deliverables": [
+        "API 到 orchestrator 的统一调用入口",
+        "旧调用方式替换",
+        "接口兼容性验证"
+      ],
+      "acceptance_criteria": [
+        "API 层不直接编排底层分析模块",
+        "接口返回结构与现有前端兼容或有明确映射",
+        "服务主入口收敛到 orchestrator"
+      ],
+      "depends_on": [3, 15],
+      "passes": false
+    },
+    {
+      "id": 18,
+      "title": "新增运行模式配置",
+      "description": "增加 full_mock、hybrid、full_pipeline 三种运行模式配置能力。当前阶段重点保证 full_mock 稳定可用，hybrid 模式可在未实现模块时自动降级到 mock。",
+      "priority": "P1",
+      "type": "feature",
+      "targets": [
+        "backend/app/config/",
+        "backend/app/services/orchestrator/"
+      ],
+      "deliverables": [
+        "运行模式配置项",
+        "模式切换逻辑",
+        "模块降级策略"
+      ],
+      "acceptance_criteria": [
+        "可通过配置切换运行模式",
+        "full_mock 为默认稳定模式",
+        "hybrid 模式下未实现模块自动降级"
+      ],
+      "depends_on": [3, 4],
+      "passes": false
+    },
+    {
+      "id": 19,
+      "title": "补充 llm 适配层骨架",
+      "description": "新增 llm/llm_client.py、prompt_renderer.py、structured_generation.py，为未来 extractor、generator 等模块接入大模型提供统一接口。当前阶段可先使用 stub 或 mock 实现。",
+      "priority": "P2",
+      "type": "feature",
+      "targets": [
+        "backend/app/services/llm/llm_client.py",
+        "backend/app/services/llm/prompt_renderer.py",
+        "backend/app/services/llm/structured_generation.py"
+      ],
+      "deliverables": [
+        "统一 LLM 客户端接口",
+        "Prompt 渲染占位实现",
+        "结构化生成占位实现"
+      ],
+      "acceptance_criteria": [
+        "具备统一方法签名",
+        "允许当前阶段不接入真实模型",
+        "不阻塞最小分析闭环落地"
+      ],
+      "depends_on": [1],
+      "passes": false
+    },
+    {
+      "id": 20,
+      "title": "补充 README 与开发说明",
+      "description": "更新 backend/README.md，说明 v0.0.2 的 services 架构、运行模式、最小真实链路范围和后续扩展方向，帮助开发和联调人员快速理解新结构。",
+      "priority": "P2",
+      "type": "document",
+      "targets": [
+        "backend/README.md"
+      ],
+      "deliverables": [
+        "services 架构说明",
+        "运行模式说明",
+        "最小闭环与限制说明"
+      ],
+      "acceptance_criteria": [
+        "README 能描述 v0.0.2 的核心设计",
+        "开发者可根据说明完成本地运行",
+        "清楚标注当前已实现与未实现范围"
+      ],
+      "depends_on": [17, 18],
+      "passes": false
+    }
+  ]
+}
