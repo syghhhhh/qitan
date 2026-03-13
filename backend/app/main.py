@@ -106,26 +106,29 @@ async def analyze(request: AnalyzeRequest) -> DueDiligenceOutput:
         config = get_run_mode_config()
 
         # 解析请求中的运行模式
-        run_mode: Optional[RunMode] = None
+        run_mode_value: Optional[RunMode] = None
         if request.run_mode:
             mode_map = {
                 "full_mock": RunMode.FULL_MOCK,
                 "hybrid": RunMode.HYBRID,
                 "full_pipeline": RunMode.FULL_PIPELINE,
             }
-            run_mode = mode_map.get(request.run_mode.lower())
+            run_mode_value = mode_map.get(request.run_mode.lower())
 
-        # 构建 orchestrator 请求
-        orchestrator_request = AnalysisRequest(
-            company_name=request.company_name.strip(),
-            company_website=request.company_website,
-            user_company_product=request.user_company_product,
-            user_target_customer_profile=request.user_target_customer_profile,
-            sales_goal=request.sales_goal,
-            target_role=request.target_role,
-            extra_context=request.extra_context,
-            run_mode=run_mode,  # 可能为 None，由配置决定默认值
-        )
+        # 构建 orchestrator 请求（只在有值时传入 run_mode）
+        request_kwargs = {
+            "company_name": request.company_name.strip(),
+            "company_website": request.company_website,
+            "user_company_product": request.user_company_product,
+            "user_target_customer_profile": request.user_target_customer_profile,
+            "sales_goal": request.sales_goal,
+            "target_role": request.target_role,
+            "extra_context": request.extra_context,
+        }
+        if run_mode_value is not None:
+            request_kwargs["run_mode"] = run_mode_value
+
+        orchestrator_request = AnalysisRequest(**request_kwargs)
 
         # 通过 orchestrator 统一调用
         orchestrator = get_orchestrator()
