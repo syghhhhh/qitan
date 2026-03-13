@@ -6,3 +6,15 @@
 """
 
 from __future__ import annotations
+
+from .entity_resolver import (
+    EntityResolver,
+    get_entity_resolver,
+    resolve_entity,
+)
+
+__all__ = [
+    "EntityResolver",
+    "get_entity_resolver",
+    "resolve_entity",
+]

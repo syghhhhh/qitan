@@ -144,7 +144,7 @@
         "无法可靠识别时可安全降级"
       ],
       "depends_on": [5],
-      "passes": false
+      "passes": true
     },
     {
       "id": 7,
