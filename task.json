@@ -237,7 +237,7 @@
         "重复新闻可基础去重，日期和 URL 可标准化"
       ],
       "depends_on": [8, 9],
-      "passes": false
+      "passes": true
     },
     {
       "id": 11,
