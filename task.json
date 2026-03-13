@@ -122,7 +122,7 @@
         "缺失字段不会导致流程崩溃"
       ],
       "depends_on": [3],
-      "passes": false
+      "passes": true
     },
     {
       "id": 6,
