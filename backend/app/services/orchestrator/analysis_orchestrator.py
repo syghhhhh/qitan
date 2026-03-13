@@ -156,7 +156,7 @@ class AnalysisOrchestrator:
 
         # 直接调用 mock_analyzer 获取结果
         # 延迟导入避免循环依赖
-        from ..mock_analyzer import get_mock_analysis
+        from ..mock import get_mock_analysis
 
         state.set_stage_status("init", "completed")
         state.set_stage_timing("init", time.time() - start_time)
@@ -281,7 +281,7 @@ class AnalysisOrchestrator:
         Returns:
             DueDiligenceOutput: Mock 生成的背调结果
         """
-        from ..mock_analyzer import get_mock_analysis
+        from ..mock import get_mock_analysis
 
         return get_mock_analysis(
             company_name=request.company_name,

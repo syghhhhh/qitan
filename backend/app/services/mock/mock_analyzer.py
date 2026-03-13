@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from ..schemas import (
+from ...schemas import (
     DueDiligenceOutput,
     Meta,
     Input,

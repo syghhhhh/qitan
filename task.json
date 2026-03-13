@@ -100,7 +100,7 @@
         "迁移后无功能丢失"
       ],
       "depends_on": [1],
-      "passes": false
+      "passes": true
     },
     {
       "id": 5,

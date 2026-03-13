@@ -6,3 +6,7 @@ Mock 数据模块
 """
 
 from __future__ import annotations
+
+from .mock_analyzer import get_mock_analysis
+
+__all__ = ["get_mock_analysis"]
