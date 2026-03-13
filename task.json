@@ -348,7 +348,7 @@
         "与现有 schema 保持一致或兼容"
       ],
       "depends_on": [13, 14],
-      "passes": false
+      "passes": true
     },
     {
       "id": 16,

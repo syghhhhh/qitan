@@ -6,3 +6,15 @@
 """
 
 from __future__ import annotations
+
+from .output_assembler import (
+    OutputAssembler,
+    get_output_assembler,
+    assemble_output,
+)
+
+__all__ = [
+    "OutputAssembler",
+    "get_output_assembler",
+    "assemble_output",
+]
