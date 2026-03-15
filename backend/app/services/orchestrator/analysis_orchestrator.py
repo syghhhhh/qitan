@@ -47,7 +47,7 @@ class AnalysisRequest(BaseModel):
     sales_goal: SalesGoalEnum = SalesGoalEnum.FIRST_TOUCH
     target_role: Optional[str] = None
     extra_context: Optional[str] = None
-    run_mode: RunMode = RunMode.FULL_MOCK  # 默认使用 full_mock 模式
+    run_mode: RunMode = RunMode.FULL_PIPELINE  # 默认使用 full_pipeline 模式
 
 
 class AnalysisOrchestrator:
@@ -272,9 +272,16 @@ class AnalysisOrchestrator:
                 warning_type="PartialRealImplementation",
                 warning_message=f"Hybrid 模式：{len(can_use_real)} 个模块使用真实实现，{len(must_use_mock)} 个模块使用 mock",
             )
-            # 当前阶段先使用 full_mock 作为基础实现
-            # TODO: 后续根据模块状态逐步接入真实实现
-            result = await self._run_full_mock(state, request)
+            # 尝试走真实链路，失败则降级到 mock
+            try:
+                result = await self._run_full_pipeline(state, request)
+            except Exception as e:
+                state.add_warning(
+                    stage=PipelineStage.INIT,
+                    warning_type="HybridFallback",
+                    warning_message=f"真实链路失败({e})，降级到 full_mock",
+                )
+                result = await self._run_full_mock(state, request)
 
         state.stage_timings["total"] = time.time() - start_time
 
@@ -286,19 +293,12 @@ class AnalysisOrchestrator:
         """
         执行全真实链路分析
 
-        在此模式下，所有模块都使用真实实现。
-        根据配置检查是否所有必需模块都已实现。
-
-        未来实现时，将按照以下顺序执行：
+        流程：
         1. context_builder - 构建分析上下文
-        2. entity_resolver - 确认企业实体
-        3. collection - 数据采集
-        4. preprocessing - 证据预处理
-        5. extraction - 事实抽取
-        6. analysis - 业务分析
-        7. scoring - 评分计算
-        8. generation - 内容生成
-        9. assembly - 结果组装
+        2. entity_resolver - 通过企查查模糊搜索确认企业实体
+        3. collection - 通过企查查企业信息核验获取企业数据
+        4. analysis - 调用大模型(POE/gpt-5.4)生成全部分析结果
+        5. assembly - 组装最终输出
 
         Args:
             state: 流水线状态
@@ -310,24 +310,142 @@ class AnalysisOrchestrator:
         start_time = time.time()
         state.debug_info["execution_path"] = "full_pipeline"
 
-        # 检查是否支持 full_pipeline 模式
-        if not self.run_mode_config._check_full_pipeline_available():
-            module_status = self.run_mode_config.get_module_status_summary()
-            state.add_warning(
-                stage=PipelineStage.INIT,
-                warning_type="ModeNotSupported",
-                warning_message=f"Full pipeline 模式当前不支持（已实现 {module_status['implemented_count']}/{module_status['total_modules']} 个模块），降级到 hybrid",
-            )
-            result = await self._run_hybrid(state, request)
-        else:
-            # TODO: 实现完整的真实链路
-            state.add_warning(
-                stage=PipelineStage.INIT,
-                warning_type="ImplementationPending",
-                warning_message="Full pipeline 实现待完成，暂时降级到 hybrid",
-            )
-            result = await self._run_hybrid(state, request)
+        # ========== 阶段1: 构建分析上下文 ==========
+        stage_start = time.time()
+        state.update_stage(PipelineStage.CONTEXT_BUILD)
+        state.set_stage_status("context_build", "started")
 
+        from ..context.context_builder import get_context_builder
+
+        context_builder = get_context_builder()
+        context = context_builder.build(
+            company_name=request.company_name,
+            company_website=request.company_website,
+            user_company_product=request.user_company_product,
+            user_target_customer_profile=request.user_target_customer_profile,
+            sales_goal=request.sales_goal,
+            target_role=request.target_role,
+            extra_context=request.extra_context,
+        )
+        state.context = context.model_dump()
+        state.set_stage_status("context_build", "completed")
+        state.set_stage_timing("context_build", time.time() - stage_start)
+
+        # ========== 阶段2: 企查查数据采集（实体确认 + 企业信息）==========
+        stage_start = time.time()
+        state.update_stage(PipelineStage.COLLECTION)
+        state.set_stage_status("collection", "started")
+
+        company_data = {}
+        try:
+            from ..collection.qichacha_client import get_qichacha_client
+
+            qcc_client = get_qichacha_client()
+            company_data = qcc_client.get_company_info(request.company_name)
+
+            # 更新 resolved_company
+            verify_data = company_data.get("verify_data", {})
+            accurate_name = company_data.get("accurate_name", request.company_name)
+
+            state.resolved_company = ResolvedCompany(
+                standard_name=accurate_name,
+                domain=None,
+                aliases=[request.company_name] if request.company_name != accurate_name else [],
+                confidence=0.95,
+                resolution_notes="通过企查查模糊搜索确认企业实体",
+            )
+
+            # 将企查查数据存入 raw_evidence
+            from .pipeline_state import RawEvidence
+            state.add_raw_evidence(RawEvidence(
+                evidence_id="qcc_verify_001",
+                source_type="企查查企业信息核验",
+                url=None,
+                title=f"{accurate_name} - 企业工商信息",
+                content=_format_qcc_data(verify_data),
+                metadata={"raw_verify_data": verify_data},
+            ))
+
+            state.set_stage_status("collection", "completed")
+
+        except Exception as e:
+            state.add_error(
+                stage=PipelineStage.COLLECTION,
+                error_type="QichachaError",
+                error_message=f"企查查数据采集失败: {e}",
+                is_recoverable=True,
+            )
+            state.set_stage_status("collection", "failed_with_fallback")
+            # 即使采集失败，也继续用有限信息进行分析
+
+        state.set_stage_timing("collection", time.time() - stage_start)
+
+        # ========== 阶段3: 大模型分析（跳过预处理和抽取，直接分析）==========
+        stage_start = time.time()
+        state.update_stage(PipelineStage.ANALYSIS)
+        state.set_stage_status("analysis", "started")
+
+        try:
+            from ..llm.llm_analysis import run_llm_analysis
+
+            analysis_results = run_llm_analysis(
+                company_name=company_data.get("accurate_name", request.company_name),
+                verify_data=company_data.get("verify_data", {}),
+                user_company_product=request.user_company_product,
+                sales_goal=request.sales_goal.value if hasattr(request.sales_goal, 'value') else str(request.sales_goal),
+                target_role=request.target_role,
+                extra_context=request.extra_context,
+            )
+
+            # 将分析结果存入 PipelineState
+            from .pipeline_state import AnalysisResult
+
+            for result_type, result_data in analysis_results.items():
+                state.set_analysis_result(
+                    result_type,
+                    AnalysisResult(
+                        result_type=result_type,
+                        result_data=result_data,
+                        confidence=0.8,
+                    ),
+                )
+
+            state.set_stage_status("analysis", "completed")
+
+        except Exception as e:
+            state.add_error(
+                stage=PipelineStage.ANALYSIS,
+                error_type="LLMAnalysisError",
+                error_message=f"大模型分析失败: {e}",
+                is_recoverable=True,
+            )
+            state.set_stage_status("analysis", "failed_with_fallback")
+
+        state.set_stage_timing("analysis", time.time() - stage_start)
+
+        # ========== 阶段4: 组装输出 ==========
+        stage_start = time.time()
+        state.update_stage(PipelineStage.ASSEMBLY)
+        state.set_stage_status("assembly", "started")
+
+        from ..assembly.output_assembler import get_output_assembler
+        from ...schemas import Input
+
+        user_input = Input(
+            company_name=request.company_name,
+            company_website=request.company_website,
+            user_company_product=request.user_company_product,
+            user_target_customer_profile=request.user_target_customer_profile,
+            sales_goal=request.sales_goal,
+            target_role=request.target_role,
+            extra_context=request.extra_context,
+        )
+
+        assembler = get_output_assembler()
+        result = assembler.assemble(state, user_input)
+
+        state.set_stage_status("assembly", "completed")
+        state.set_stage_timing("assembly", time.time() - stage_start)
         state.stage_timings["total"] = time.time() - start_time
 
         return result
@@ -404,3 +522,62 @@ def reset_orchestrator() -> None:
     """
     global _default_orchestrator
     _default_orchestrator = None
+
+
+def _format_qcc_data(verify_data: Dict[str, Any]) -> str:
+    """
+    将企查查核验数据格式化为可读文本，用于作为 LLM 分析的输入
+
+    Args:
+        verify_data: 企查查企业信息核验返回的 Data 字典
+
+    Returns:
+        格式化后的文本
+    """
+    if not verify_data:
+        return "无企业数据"
+
+    parts = []
+    parts.append(f"企业名称: {verify_data.get('Name', '未知')}")
+    parts.append(f"英文名称: {verify_data.get('EnglishName', '无')}")
+    parts.append(f"统一社会信用代码: {verify_data.get('CreditCode', '无')}")
+    parts.append(f"法定代表人: {verify_data.get('OperName', '未知')}")
+    parts.append(f"经营状态: {verify_data.get('Status', '未知')}")
+    parts.append(f"成立日期: {verify_data.get('StartDate', '未知')}")
+    parts.append(f"注册资本: {verify_data.get('RegistCapi', '未知')}")
+    parts.append(f"企业类型: {verify_data.get('EconKind', '未知')}")
+    parts.append(f"纳税人类型: {verify_data.get('TaxpayerType', '未知')}")
+    parts.append(f"参保人数: {verify_data.get('InsuredCount', '未知')}")
+    parts.append(f"企业规模: {verify_data.get('Scale', '未知')}")
+    parts.append(f"是否小微企业: {'是' if verify_data.get('IsSmall') == '1' else '否'}")
+
+    # 地区信息
+    area = verify_data.get("Area", {})
+    if area:
+        parts.append(f"所在地区: {area.get('Province', '')}{area.get('City', '')}{area.get('County', '')}")
+
+    parts.append(f"详细地址: {verify_data.get('Address', '未知')}")
+
+    # 行业信息
+    industry = verify_data.get("Industry", {})
+    if industry:
+        parts.append(f"行业分类: {industry.get('Industry', '未知')}")
+
+    qcc_industry = verify_data.get("QccIndustry", {})
+    if qcc_industry:
+        parts.append(f"细分行业: {qcc_industry.get('AName', '')}-{qcc_industry.get('BName', '')}-{qcc_industry.get('CName', '')}-{qcc_industry.get('DName', '')}")
+
+    # 经营范围
+    scope = verify_data.get("Scope", "")
+    if scope:
+        parts.append(f"经营范围: {scope}")
+
+    # 联系信息
+    contact = verify_data.get("ContactInfo", {})
+    if contact:
+        if contact.get("Email"):
+            parts.append(f"邮箱: {contact['Email']}")
+        if contact.get("Tel"):
+            parts.append(f"电话: {contact['Tel']}")
+
+    return "\n".join(parts)

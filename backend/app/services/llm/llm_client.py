@@ -257,13 +257,16 @@ class PoeLLMClient(BaseLLMClient):
         """
         import os
 
+        from dotenv import load_dotenv
+        load_dotenv()
+
         self.api_key = api_key or os.environ.get("POE_API_KEY")
         self.model = model
         self.base_url = base_url
         self.proxy = proxy
 
         if not self.api_key:
-            raise LLMClientError("未配置 POE_API_KEY，请设置环境变量或传入 api_key 参数")
+            raise LLMClientError("未配置 POE_API_KEY，请在 .env 文件中设置或传入 api_key 参数")
 
     def complete(self, request: LLMRequest) -> LLMResponse:
         """执行 Poe API 补全"""

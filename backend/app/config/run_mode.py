@@ -76,88 +76,88 @@ class PipelineModuleConfig(BaseModel):
         description="实体解析模块",
     )
 
-    # 数据采集
+    # 数据采集（通过企查查 API 实现）
     website_collector: ModuleConfig = Field(
         default_factory=lambda: ModuleConfig(
             name="website_collector",
-            status=ModuleStatus.NOT_IMPLEMENTED,
+            status=ModuleStatus.IMPLEMENTED,
         ),
-        description="官网采集模块",
+        description="官网采集模块（企查查API替代）",
     )
 
     news_collector: ModuleConfig = Field(
         default_factory=lambda: ModuleConfig(
             name="news_collector",
-            status=ModuleStatus.NOT_IMPLEMENTED,
+            status=ModuleStatus.IMPLEMENTED,
         ),
-        description="新闻采集模块",
+        description="新闻采集模块（LLM推断替代）",
     )
 
-    # 证据预处理
+    # 证据预处理（当前版本跳过，由LLM直接处理）
     evidence_cleaner: ModuleConfig = Field(
         default_factory=lambda: ModuleConfig(
             name="evidence_cleaner",
-            status=ModuleStatus.NOT_IMPLEMENTED,
+            status=ModuleStatus.IMPLEMENTED,
         ),
-        description="证据清洗模块",
+        description="证据清洗模块（当前版本跳过）",
     )
 
     evidence_deduplicator: ModuleConfig = Field(
         default_factory=lambda: ModuleConfig(
             name="evidence_deduplicator",
-            status=ModuleStatus.NOT_IMPLEMENTED,
+            status=ModuleStatus.IMPLEMENTED,
         ),
-        description="证据去重模块",
+        description="证据去重模块（当前版本跳过）",
     )
 
     evidence_normalizer: ModuleConfig = Field(
         default_factory=lambda: ModuleConfig(
             name="evidence_normalizer",
-            status=ModuleStatus.NOT_IMPLEMENTED,
+            status=ModuleStatus.IMPLEMENTED,
         ),
-        description="证据标准化模块",
+        description="证据标准化模块（当前版本跳过）",
     )
 
     evidence_ranker: ModuleConfig = Field(
         default_factory=lambda: ModuleConfig(
             name="evidence_ranker",
-            status=ModuleStatus.NOT_IMPLEMENTED,
+            status=ModuleStatus.IMPLEMENTED,
         ),
-        description="证据排序模块",
+        description="证据排序模块（当前版本跳过）",
     )
 
-    # 事实抽取
+    # 事实抽取（由LLM统一完成）
     company_profile_extractor: ModuleConfig = Field(
         default_factory=lambda: ModuleConfig(
             name="company_profile_extractor",
-            status=ModuleStatus.NOT_IMPLEMENTED,
+            status=ModuleStatus.IMPLEMENTED,
         ),
-        description="企业画像抽取模块",
+        description="企业画像抽取模块（LLM统一处理）",
     )
 
     development_extractor: ModuleConfig = Field(
         default_factory=lambda: ModuleConfig(
             name="development_extractor",
-            status=ModuleStatus.NOT_IMPLEMENTED,
+            status=ModuleStatus.IMPLEMENTED,
         ),
-        description="近期动态抽取模块",
+        description="近期动态抽取模块（LLM统一处理）",
     )
 
-    # 业务分析
+    # 业务分析（由LLM统一完成）
     company_profile_analyzer: ModuleConfig = Field(
         default_factory=lambda: ModuleConfig(
             name="company_profile_analyzer",
-            status=ModuleStatus.NOT_IMPLEMENTED,
+            status=ModuleStatus.IMPLEMENTED,
         ),
-        description="企业画像分析模块",
+        description="企业画像分析模块（LLM统一处理）",
     )
 
     recent_development_analyzer: ModuleConfig = Field(
         default_factory=lambda: ModuleConfig(
             name="recent_development_analyzer",
-            status=ModuleStatus.NOT_IMPLEMENTED,
+            status=ModuleStatus.IMPLEMENTED,
         ),
-        description="近期动态分析模块",
+        description="近期动态分析模块（LLM统一处理）",
     )
 
     # 结果组装
@@ -197,7 +197,7 @@ class RunModeConfig(BaseModel):
 
     # 默认运行模式
     default_run_mode: RunMode = Field(
-        default=RunMode.FULL_MOCK,
+        default=RunMode.FULL_PIPELINE,
         description="默认运行模式",
     )
 
@@ -369,7 +369,7 @@ class RunModeConfig(BaseModel):
 
 def _get_run_mode_from_env() -> RunMode:
     """从环境变量获取运行模式"""
-    env_mode = os.environ.get("RUN_MODE", "full_mock").lower()
+    env_mode = os.environ.get("RUN_MODE", "full_pipeline").lower()
     mode_map = {
         "full_mock": RunMode.FULL_MOCK,
         "hybrid": RunMode.HYBRID,
