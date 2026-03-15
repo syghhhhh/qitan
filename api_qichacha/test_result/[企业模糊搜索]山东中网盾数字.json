@@ -1,0 +1,42 @@
+{
+  "Status": "200",
+  "Message": "【有效请求】查询成功",
+  "OrderNumber": "FUZZYSEARCH2026031601062132842856",
+  "Paging": {
+    "PageSize": 5,
+    "PageIndex": 1,
+    "TotalRecords": 3
+  },
+  "Result": [
+    {
+      "KeyNo": "53s53yhsijkslsvjihmrsiamjassrrhv5i",
+      "Name": "山东中网盾数字服务有限公司",
+      "CreditCode": "91370214MAC3XDBG8K",
+      "StartDate": "2022-11-03",
+      "OperName": "苏育",
+      "Status": "在业",
+      "No": "370214231109411",
+      "Address": "山东省日照东港区日照街道日照市东港区兴海路与旭阳路交汇处7-2号楼"
+    },
+    {
+      "KeyNo": "beiksyaem5mjs3rjm3i5k59bvjrbmiej5h",
+      "Name": "山东中网盾信息安全技术有限公司",
+      "CreditCode": "91370105MA7FG11BX5",
+      "StartDate": "2022-01-12",
+      "OperName": "郭新杰",
+      "Status": "在业",
+      "No": "370105200873160",
+      "Address": "山东省济南市天桥区堤口路17号D17文化创意产业园开创云谷联合办公区二楼2317"
+    },
+    {
+      "KeyNo": "2mesryjhehksis5jsrjejev39biprbi53p",
+      "Name": "山东中网盾信息安全技术有限公司青岛分公司",
+      "CreditCode": "91370214MAETCM0T1P",
+      "StartDate": "2025-08-18",
+      "OperName": "苏育",
+      "Status": "在业",
+      "No": "370214330102403",
+      "Address": "山东省青岛市城阳区棘洪滩街道宏祥三路18号1号楼2层"
+    }
+  ]
+}

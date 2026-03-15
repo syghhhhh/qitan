@@ -1,0 +1,103 @@
+{
+  "Status": "200",
+  "Message": "【有效请求】查询成功",
+  "OrderNumber": "ENTERPRISEINFO2026031601062286137091",
+  "Result": {
+    "VerifyResult": 1,
+    "Data": {
+      "KeyNo": "53s53yhsijkslsvjihmrsiamjassrrhv5i",
+      "Name": "山东中网盾数字服务有限公司",
+      "CreditCode": "91370214MAC3XDBG8K",
+      "OperName": "苏育",
+      "DesignatedRepresentativeList": [],
+      "Status": "在营（开业）企业",
+      "StartDate": "2022-11-03",
+      "RegistCapi": "490万元",
+      "RegisteredCapital": "490",
+      "RegisteredCapitalUnit": "万",
+      "RegisteredCapitalCCY": "CNY",
+      "RealCapi": "",
+      "PaidUpCapital": "",
+      "PaidUpCapitalUnit": "",
+      "PaidUpCapitalCCY": "",
+      "OrgNo": "MAC3XDBG-8",
+      "No": "370214231109411",
+      "TaxNo": "91370214MAC3XDBG8K",
+      "EconKind": "其他有限责任公司",
+      "TermStart": "2022-11-03",
+      "TermEnd": "",
+      "TaxpayerType": "一般纳税人",
+      "PersonScope": "",
+      "InsuredCount": "0",
+      "CheckDate": "2026-02-27",
+      "AreaCode": "371102",
+      "Area": {
+        "Province": "山东省",
+        "City": "日照市",
+        "County": "东港区"
+      },
+      "BelongOrg": "日照市东港区市场监督管理局",
+      "ImExCode": "",
+      "Industry": {
+        "IndustryCode": "I",
+        "Industry": "信息传输、软件和信息技术服务业",
+        "SubIndustryCode": "",
+        "SubIndustry": "",
+        "MiddleCategoryCode": "",
+        "MiddleCategory": "",
+        "SmallCategoryCode": "",
+        "SmallCategory": ""
+      },
+      "EnglishName": "Shandong Zhongwandun Digital Service Co., Ltd.",
+      "Address": "山东省日照东港区日照街道日照市东港区兴海路与旭阳路交汇处7-2号楼",
+      "AddressPostalCode": "276801",
+      "AnnualAddress": "",
+      "AnnualAddressPostalCode": "",
+      "Scope": "一般项目：物联网技术服务；数字文化创意软件开发；数据处理和存储支持服务；会议及展览服务；数据处理服务；计算机系统服务；信息技术咨询服务；人工智能基础软件开发；科技中介服务；人工智能应用软件开发；园区管理服务；数字文化创意内容应用服务；人工智能理论与算法软件开发；信息系统集成服务；数字视频监控系统销售；技术服务、技术开发、技术咨询、技术交流、技术转让、技术推广；信息咨询服务（不含许可类信息咨询服务）。（除依法须经批准的项目外，凭营业执照依法自主开展经营活动）",
+      "EntType": "0",
+      "OrgCodeList": [
+        {
+          "PrimaryCode": "100200",
+          "SecondaryCode": ""
+        }
+      ],
+      "ImageUrl": "https://image.qcc.com/logo/EntImage.png",
+      "RevokeInfo": null,
+      "OriginalName": null,
+      "StockInfo": null,
+      "ContactInfo": {
+        "WebSiteList": null,
+        "Email": "qixq@inspur.com",
+        "MoreEmailList": [
+          {
+            "Email": "1455794859@qq.com",
+            "Source": "2023年报"
+          }
+        ],
+        "Tel": "13210394914",
+        "MoreTelList": null
+      },
+      "LongLat": {
+        "Longitude": "119.436227",
+        "Latitude": "35.422724"
+      },
+      "BankInfo": {
+        "Bank": "",
+        "BankAccount": "",
+        "Name": "山东中网盾数字服务有限公司",
+        "CreditCode": "91370214MAC3XDBG8K",
+        "Address": "山东省日照东港区日照街道日照市东港区兴海路与旭阳路交汇处7-2号楼",
+        "Tel": ""
+      },
+      "IsSmall": "1",
+      "Scale": "S",
+      "QccIndustry": {
+        "AName": "信息技术",
+        "BName": "计算机",
+        "CName": "IT服务",
+        "DName": "信息技术咨询服务"
+      },
+      "IsOfficialEnglish": "0"
+    }
+  }
+}
