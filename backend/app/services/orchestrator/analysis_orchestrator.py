@@ -30,6 +30,7 @@ from .pipeline_state import (
     PipelineStage,
     PipelineState,
 )
+from ..logging import PipelineLogger
 
 
 class AnalysisRequest(BaseModel):
@@ -103,6 +104,22 @@ class AnalysisOrchestrator:
             request=request.model_dump(),
         )
 
+        # 创建日志记录器
+        logger = PipelineLogger(company_name=request.company_name)
+
+        # 记录用户输入
+        logger.log_user_input({
+            "company_name": request.company_name,
+            "company_website": request.company_website,
+            "user_company_product": request.user_company_product,
+            "user_target_customer_profile": request.user_target_customer_profile,
+            "sales_goal": request.sales_goal.value if hasattr(request.sales_goal, 'value') else str(request.sales_goal),
+            "target_role": request.target_role,
+            "extra_context": request.extra_context,
+            "run_mode": request.run_mode.value if hasattr(request.run_mode, 'value') else str(request.run_mode),
+            "actual_run_mode": actual_run_mode.value,
+        })
+
         # 记录模式切换信息
         if actual_run_mode != request.run_mode:
             state.add_warning(
@@ -110,7 +127,9 @@ class AnalysisOrchestrator:
                 warning_type="RunModeChanged",
                 warning_message=f"运行模式从 {request.run_mode.value} 切换到 {actual_run_mode.value}",
             )
+            logger.log_info("编排器", f"运行模式从 {request.run_mode.value} 切换到 {actual_run_mode.value}")
 
+        pipeline_start = time.time()
         try:
             # 根据运行模式选择执行路径
             if actual_run_mode == RunMode.FULL_MOCK:
@@ -118,12 +137,13 @@ class AnalysisOrchestrator:
             elif actual_run_mode == RunMode.HYBRID:
                 result = await self._run_hybrid(state, request)
             else:
-                result = await self._run_full_pipeline(state, request)
+                result = await self._run_full_pipeline(state, request, logger)
 
             # 更新最终状态
             state.update_stage(PipelineStage.COMPLETED)
             state.final_output = result.model_dump()
 
+            logger.log_summary(time.time() - pipeline_start, success=True)
             return result
 
         except Exception as e:
@@ -135,6 +155,7 @@ class AnalysisOrchestrator:
                 is_recoverable=False,
             )
             state.update_stage(PipelineStage.FAILED)
+            logger.log_error("编排器", e)
 
             # 尝试降级到 mock 模式
             if self.run_mode_config.enable_auto_fallback:
@@ -146,10 +167,12 @@ class AnalysisOrchestrator:
                     fallback_used=True,
                     fallback_description="使用 mock 数据返回结果",
                 )
+                logger.log_info("编排器", "主流程失败，降级到 mock 模式")
+                result = await self._get_fallback_mock_result(request)
+                logger.log_summary(time.time() - pipeline_start, success=False)
+                return result
 
-                # 返回 mock 结果作为兜底
-                return await self._get_fallback_mock_result(request)
-
+            logger.log_summary(time.time() - pipeline_start, success=False)
             # 如果不允许自动降级，重新抛出异常
             raise
 
@@ -288,7 +311,7 @@ class AnalysisOrchestrator:
         return result
 
     async def _run_full_pipeline(
-        self, state: PipelineState, request: AnalysisRequest
+        self, state: PipelineState, request: AnalysisRequest, logger: Optional[PipelineLogger] = None
     ) -> DueDiligenceOutput:
         """
         执行全真实链路分析
@@ -314,11 +337,14 @@ class AnalysisOrchestrator:
         stage_start = time.time()
         state.update_stage(PipelineStage.CONTEXT_BUILD)
         state.set_stage_status("context_build", "started")
+        if logger:
+            logger.log_stage_start("阶段1: 构建分析上下文")
 
         from ..context.context_builder import get_context_builder
 
         context_builder = get_context_builder()
-        context = context_builder.build(
+
+        build_kwargs = dict(
             company_name=request.company_name,
             company_website=request.company_website,
             user_company_product=request.user_company_product,
@@ -327,21 +353,42 @@ class AnalysisOrchestrator:
             target_role=request.target_role,
             extra_context=request.extra_context,
         )
+
+        if logger:
+            context = logger.log_function_call(
+                "上下文构建", "context_builder.build",
+                context_builder.build, **build_kwargs,
+            )
+        else:
+            context = context_builder.build(**build_kwargs)
+
         state.context = context.model_dump()
         state.set_stage_status("context_build", "completed")
-        state.set_stage_timing("context_build", time.time() - stage_start)
+        stage_elapsed = time.time() - stage_start
+        state.set_stage_timing("context_build", stage_elapsed)
+        if logger:
+            logger.log_stage_end("阶段1: 构建分析上下文", stage_elapsed)
 
         # ========== 阶段2: 企查查数据采集（实体确认 + 企业信息）==========
         stage_start = time.time()
         state.update_stage(PipelineStage.COLLECTION)
         state.set_stage_status("collection", "started")
+        if logger:
+            logger.log_stage_start("阶段2: 企查查数据采集")
 
         company_data = {}
         try:
             from ..collection.qichacha_client import get_qichacha_client
 
             qcc_client = get_qichacha_client()
-            company_data = qcc_client.get_company_info(request.company_name)
+
+            if logger:
+                company_data = logger.log_function_call(
+                    "企查查采集", "qichacha_client.get_company_info",
+                    qcc_client.get_company_info, request.company_name,
+                )
+            else:
+                company_data = qcc_client.get_company_info(request.company_name)
 
             # 更新 resolved_company
             verify_data = company_data.get("verify_data", {})
@@ -376,19 +423,25 @@ class AnalysisOrchestrator:
                 is_recoverable=True,
             )
             state.set_stage_status("collection", "failed_with_fallback")
-            # 即使采集失败，也继续用有限信息进行分析
+            if logger:
+                logger.log_error("企查查采集", e)
 
-        state.set_stage_timing("collection", time.time() - stage_start)
+        stage_elapsed = time.time() - stage_start
+        state.set_stage_timing("collection", stage_elapsed)
+        if logger:
+            logger.log_stage_end("阶段2: 企查查数据采集", stage_elapsed)
 
         # ========== 阶段3: 大模型分析（跳过预处理和抽取，直接分析）==========
         stage_start = time.time()
         state.update_stage(PipelineStage.ANALYSIS)
         state.set_stage_status("analysis", "started")
+        if logger:
+            logger.log_stage_start("阶段3: 大模型分析")
 
         try:
             from ..llm.llm_analysis import run_llm_analysis
 
-            analysis_results = run_llm_analysis(
+            llm_kwargs = dict(
                 company_name=company_data.get("accurate_name", request.company_name),
                 verify_data=company_data.get("verify_data", {}),
                 user_company_product=request.user_company_product,
@@ -396,6 +449,14 @@ class AnalysisOrchestrator:
                 target_role=request.target_role,
                 extra_context=request.extra_context,
             )
+
+            if logger:
+                analysis_results = logger.log_function_call(
+                    "LLM分析", "run_llm_analysis",
+                    run_llm_analysis, **llm_kwargs,
+                )
+            else:
+                analysis_results = run_llm_analysis(**llm_kwargs)
 
             # 将分析结果存入 PipelineState
             from .pipeline_state import AnalysisResult
@@ -420,13 +481,20 @@ class AnalysisOrchestrator:
                 is_recoverable=True,
             )
             state.set_stage_status("analysis", "failed_with_fallback")
+            if logger:
+                logger.log_error("LLM分析", e)
 
-        state.set_stage_timing("analysis", time.time() - stage_start)
+        stage_elapsed = time.time() - stage_start
+        state.set_stage_timing("analysis", stage_elapsed)
+        if logger:
+            logger.log_stage_end("阶段3: 大模型分析", stage_elapsed)
 
         # ========== 阶段4: 组装输出 ==========
         stage_start = time.time()
         state.update_stage(PipelineStage.ASSEMBLY)
         state.set_stage_status("assembly", "started")
+        if logger:
+            logger.log_stage_start("阶段4: 组装输出")
 
         from ..assembly.output_assembler import get_output_assembler
         from ...schemas import Input
@@ -442,11 +510,21 @@ class AnalysisOrchestrator:
         )
 
         assembler = get_output_assembler()
-        result = assembler.assemble(state, user_input)
+
+        if logger:
+            result = logger.log_function_call(
+                "输出组装", "output_assembler.assemble",
+                assembler.assemble, state, user_input,
+            )
+        else:
+            result = assembler.assemble(state, user_input)
 
         state.set_stage_status("assembly", "completed")
-        state.set_stage_timing("assembly", time.time() - stage_start)
+        stage_elapsed = time.time() - stage_start
+        state.set_stage_timing("assembly", stage_elapsed)
         state.stage_timings["total"] = time.time() - start_time
+        if logger:
+            logger.log_stage_end("阶段4: 组装输出", stage_elapsed)
 
         return result
 
