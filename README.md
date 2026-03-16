@@ -2,7 +2,7 @@
 
 面向企业商务岗位的企业背调智能体，对企业进行公开信息背调，输出企业画像、需求信号、风险提示、联系人建议和沟通话术。
 
-**当前版本**：v0.0.2（全链路已打通）
+**当前版本**：v0.0.3（四板块页面 + 流式智能问答）
 
 ---
 
@@ -58,6 +58,7 @@
 - FastAPI
 - Pydantic v2
 - uv（环境管理）
+- aiohttp（异步 HTTP / SSE 流式请求）
 - 企查查 API（企业工商数据）
 - POE API / gpt-5.4（大模型分析）
 
@@ -92,6 +93,9 @@ QICHACHA_SECRETKEY=你的secretKey
 
 # POE API 密钥
 POE_API_KEY=你的poe_api_key
+
+# 代理地址（访问 POE API 需要，默认 http://127.0.0.1:7890）
+POE_PROXY=http://127.0.0.1:7890
 ```
 
 ### 启动服务
@@ -107,7 +111,9 @@ uv run uvicorn backend.app.main:app --reload --port 8008
 | http://127.0.0.1:8008/ | 前端页面 |
 | http://127.0.0.1:8008/health | 健康检查 |
 | http://127.0.0.1:8008/docs | API 文档（Swagger） |
-| http://127.0.0.1:8008/analyze | POST 分析接口 |
+| http://127.0.0.1:8008/collect | POST 企业数据采集 |
+| http://127.0.0.1:8008/analyze | POST 大模型分析 |
+| http://127.0.0.1:8008/chat/stream | POST 流式智能问答（SSE） |
 
 ### 运行模式配置
 
@@ -162,21 +168,35 @@ qitan/
 
 ---
 
+## 前端四板块架构
+
+```
+Panel 1: 用户输入
+    │ 点击"开始分析"
+    ▼
+Panel 2: 企业信息  ← POST /collect → 企查查数据立即展示（9 组全量字段）
+    │
+    ▼
+Panel 3: 大模型分析 ← POST /analyze → 7 个分析维度（企业画像、需求信号等）
+    │
+    ▼
+Panel 4: 智能体问答 ← POST /chat/stream → SSE 流式对话（支持中断/清空）
+```
+
 ## 全链路流程
 
 ```
 用户输入企业名称
     │
-    ▼
-AnalysisOrchestrator（主编排器）
+    ├── /collect ──→ 企查查模糊搜索 + 企业信息核验 → Panel 2 立即渲染
     │
-    ├── 1. Context Build     → 构建分析上下文，标准化输入
-    ├── 2. Collection        → 企查查模糊搜索 + 企业信息核验
-    ├── 3. LLM Analysis      → POE/gpt-5.4 一次调用生成 7 个分析维度
-    └── 4. Assembly          → 组装最终 DueDiligenceOutput
-    │
-    ▼
-返回完整背调报告 JSON
+    └── /analyze ──→ AnalysisOrchestrator
+                         ├── 1. Context Build     → 构建分析上下文
+                         ├── 2. Collection        → 企查查（命中缓存）
+                         ├── 3. LLM Analysis      → POE/gpt-5.4 生成 7 维度
+                         └── 4. Assembly          → 组装 DueDiligenceOutput
+                                                       → Panel 3 渲染
+                                                       → Panel 4 激活
 ```
 
 ### 数据采集
@@ -215,11 +235,33 @@ AnalysisOrchestrator（主编排器）
 curl http://127.0.0.1:8008/health
 ```
 
+### POST /collect
+
+企业数据采集接口，直接调用企查查，返回 85+ 全量字段，有本地缓存。
+
+```bash
+curl -X POST http://127.0.0.1:8008/collect \
+  -H "Content-Type: application/json" \
+  -d '{"company_name": "华为"}'
+```
+
+**响应结构**：
+
+```json
+{
+  "accurate_name": "华为技术有限公司",
+  "fuzzy_results": [...],
+  "verify_data": {
+    "Name": "...", "CreditCode": "...", "Status": "...",
+    "RegistCapi": "...", "Scope": "...", "ContactInfo": {...},
+    "Industry": {...}, "Area": {...}, "..."
+  }
+}
+```
+
 ### POST /analyze
 
-企业背调分析接口，接收企业信息，返回完整背调报告。
-
-**请求示例**：
+企业背调分析接口，返回 7 个 LLM 分析维度。
 
 ```bash
 curl -X POST http://127.0.0.1:8008/analyze \
@@ -235,17 +277,37 @@ curl -X POST http://127.0.0.1:8008/analyze \
 
 ```json
 {
-  "meta": { "report_id": "string", "generated_at": "datetime", "language": "zh-CN", "version": "string" },
-  "input": { "company_name": "string", "user_company_product": "string", "sales_goal": "string" },
-  "company_profile": { "company_name": "string", "industry": ["string"], "profile_summary": "string", "..." : "..." },
+  "company_profile": { "company_name": "string", "industry": ["string"], "profile_summary": "string" },
   "recent_developments": [{ "date": "string", "type": "string", "title": "string", "summary": "string" }],
-  "demand_signals": [{ "signal_type": "string", "signal": "string", "evidence": "string", "inference": "string", "strength": "high|medium|low" }],
-  "organization_insights": { "recommended_target_roles": [{ "role": "string", "department": "string", "priority": "number", "reason": "string" }] },
-  "risk_signals": [{ "risk_type": "string", "risk": "string", "description": "string", "impact": "string", "level": "high|medium|low" }],
-  "sales_assessment": { "customer_fit_level": "string", "opportunity_level": "string", "follow_up_priority": "P1|P2|P3|discard", "assessment_summary": "string" },
-  "communication_strategy": { "opening_message": "string", "phone_script": "string", "wechat_message": "string", "email_message": "string" },
-  "evidence_references": []
+  "demand_signals": [{ "signal_type": "string", "signal": "string", "strength": "high|medium|low" }],
+  "organization_insights": { "recommended_target_roles": [...] },
+  "risk_signals": [{ "risk_type": "string", "level": "high|medium|low" }],
+  "sales_assessment": { "follow_up_priority": "P1|P2|P3|discard", "assessment_summary": "string" },
+  "communication_strategy": { "opening_message": "string", "phone_script": "string" }
 }
+```
+
+### POST /chat/stream
+
+SSE 流式智能问答接口。
+
+```bash
+curl -N -X POST http://127.0.0.1:8008/chat/stream \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [{"role": "user", "content": "这家公司适合作为我们的客户吗？"}],
+    "system_prompt": "你是企业背调助手，以下是企业背景...",
+    "temperature": 0.7,
+    "max_tokens": 4096
+  }'
+```
+
+**SSE 事件格式**：
+
+```
+data: {"type": "thinking", "content": "..."}   # 思考内容（可选）
+data: {"type": "token", "content": "..."}       # 正文 token
+data: {"type": "done", "content": ""}           # 结束信号
 ```
 
 ---
@@ -259,7 +321,8 @@ curl -X POST http://127.0.0.1:8008/analyze \
 | context_builder | ✅ 已实现 | 分析上下文构建 |
 | qichacha_client | ✅ 已实现 | 企查查 API 客户端（模糊搜索 + 核验 + 缓存） |
 | llm_analysis | ✅ 已实现 | LLM 分析模块（POE/gpt-5.4，7 维度一次生成） |
-| llm_client | ✅ 已实现 | LLM 客户端（POE API，含代理支持） |
+| llm_client | ✅ 已实现 | LLM 客户端（POE API，流式/非流式，含代理支持） |
+| stream_complete | ✅ 已实现 | SSE 流式输出，支持 thinking/token/done 事件 |
 | output_assembler | ✅ 已实现 | 输出组装 |
 | output_validator | ✅ 已实现 | 输出校验 |
 | pipeline_logger | ✅ 已实现 | 流水线日志（每请求独立文件） |
@@ -276,16 +339,17 @@ curl -X POST http://127.0.0.1:8008/analyze \
 |------|------|------|
 | v0.0.1 | ✅ 已完成 | MVP 骨架：数据模型、API、前端页面、Mock 数据 |
 | v0.0.2 | ✅ 已完成 | Services 分层架构 + 全链路打通（企查查 + LLM） |
-| v0.0.3 | 规划中 | 新闻数据采集、证据预处理、评分计算 |
+| v0.0.3 | ✅ 已完成 | 四板块页面 + 企查查全量字段展示 + 流式智能问答 |
 
 详细任务清单：
 - v0.0.1：`task001.json`（16 个任务，全部完成）
 - v0.0.2：`task002.json`（20 个任务，全部完成）
+- v0.0.3：`task003.json`（6 个任务，全部完成）
 
 ---
 
 ## 参考文档
 
-- **产品设计规划**：`think_log/v0.0.1/`、`think_log/v0.0.2/`
+- **产品设计规划**：`think_log/v0.0.1/`、`think_log/v0.0.2/`、`think_log/v0.0.3/`
 - **后端架构说明**：`backend/README.md`
 - **API 交互文档**：http://127.0.0.1:8008/docs（服务启动后访问）
