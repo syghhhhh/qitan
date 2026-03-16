@@ -25,6 +25,9 @@ load_dotenv()
 class QichachaClient:
     """企查查 API 客户端"""
 
+    # 缓存目录：项目根目录下的 api_qichacha/test_result
+    CACHE_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "api_qichacha", "test_result")
+
     def __init__(
         self,
         app_key: Optional[str] = None,
@@ -34,6 +37,7 @@ class QichachaClient:
         self.secret_key = secret_key or os.getenv("QICHACHA_SECRETKEY", "")
         if not self.app_key or not self.secret_key:
             raise ValueError("未配置企查查 API 密钥，请设置 QICHACHA_KEY 和 QICHACHA_SECRETKEY 环境变量")
+        self.cache_dir = os.path.normpath(self.CACHE_DIR)
 
     def _get_headers(self) -> Dict[str, str]:
         """生成请求头（含 Token 签名）"""
@@ -41,6 +45,27 @@ class QichachaClient:
         token_raw = self.app_key + timespan + self.secret_key
         token = hashlib.md5(token_raw.encode("utf-8")).hexdigest().upper()
         return {"Token": token, "Timespan": timespan}
+
+    def _get_cache_path(self, prefix: str, key: str) -> str:
+        """生成缓存文件路径"""
+        return os.path.join(self.cache_dir, f"[{prefix}]{key}.json")
+
+    def _load_cache(self, prefix: str, key: str) -> Optional[Dict[str, Any]]:
+        """尝试从缓存文件加载结果"""
+        cache_path = self._get_cache_path(prefix, key)
+        if os.path.exists(cache_path):
+            with open(cache_path, "r", encoding="utf-8") as f:
+                print(f"[企查查] 命中本地缓存: {cache_path}")
+                return json.load(f)
+        return None
+
+    def _save_cache(self, prefix: str, key: str, data: Dict[str, Any]) -> None:
+        """将结果保存到缓存文件"""
+        os.makedirs(self.cache_dir, exist_ok=True)
+        cache_path = self._get_cache_path(prefix, key)
+        with open(cache_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        print(f"[企查查] 结果已缓存: {cache_path}")
 
     def fuzzy_search(self, search_key: str) -> Dict[str, Any]:
         """
@@ -52,11 +77,20 @@ class QichachaClient:
         Returns:
             API 返回的 JSON 字典
         """
+        # 优先从本地缓存读取
+        cached = self._load_cache("企业模糊搜索", search_key)
+        if cached is not None:
+            return cached
+
         url = f"https://api.qichacha.com/FuzzySearch/GetList?key={self.app_key}&searchKey={search_key}"
         headers = self._get_headers()
         response = requests.get(url, headers=headers, timeout=30)
         response.raise_for_status()
-        return response.json()
+        result = response.json()
+
+        # 保存到本地缓存
+        self._save_cache("企业模糊搜索", search_key, result)
+        return result
 
     def enterprise_info_verify(self, search_key: str) -> Dict[str, Any]:
         """
@@ -68,11 +102,20 @@ class QichachaClient:
         Returns:
             API 返回的 JSON 字典
         """
+        # 优先从本地缓存读取
+        cached = self._load_cache("企业信息核验", search_key)
+        if cached is not None:
+            return cached
+
         url = f"https://api.qichacha.com/EnterpriseInfo/Verify?key={self.app_key}&searchKey={search_key}"
         headers = self._get_headers()
         response = requests.get(url, headers=headers, timeout=30)
         response.raise_for_status()
-        return response.json()
+        result = response.json()
+
+        # 保存到本地缓存
+        self._save_cache("企业信息核验", search_key, result)
+        return result
 
     def get_company_info(self, search_key: str) -> Dict[str, Any]:
         """
