@@ -2,6 +2,7 @@
 backend/logs/*.log
 api_qichacha/test_result/
 .claude/settings.local.json
+test_output.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
