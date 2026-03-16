@@ -1,0 +1,36 @@
+{
+  "version": "v0.0.3",
+  "title": "四板块页面 + 流式智能问答",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "pyproject.toml 添加 aiohttp 依赖",
+      "passes": true
+    },
+    {
+      "id": 2,
+      "title": "llm_client.py 添加 stream_complete 流式方法",
+      "passes": true
+    },
+    {
+      "id": 3,
+      "title": "main.py 新增 /collect 和 /chat/stream 端点",
+      "passes": true
+    },
+    {
+      "id": 4,
+      "title": "index.html 四板块 HTML 结构重构",
+      "passes": true
+    },
+    {
+      "id": 5,
+      "title": "style.css 新增板块、聊天、企业信息样式",
+      "passes": true
+    },
+    {
+      "id": 6,
+      "title": "app.js 两步调用 + 企业信息渲染 + Chat 流式逻辑",
+      "passes": true
+    }
+  ]
+}

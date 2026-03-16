@@ -1,17 +1,21 @@
 """
 企业背调智能体 MVP - FastAPI 应用入口
 """
+import asyncio
+import json
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .config import get_run_mode_config
 from .schemas import DueDiligenceOutput, SalesGoalEnum
+from .services.collection.qichacha_client import get_qichacha_client
+from .services.llm.llm_client import LLMMessage, LLMRequest, get_llm_client, LLMProvider
 from .services.orchestrator import AnalysisRequest, get_orchestrator, RunMode
 
 # 前端静态文件目录
@@ -149,6 +153,93 @@ async def analyze(request: AnalyzeRequest) -> DueDiligenceOutput:
                 "detail": str(e),
             },
         )
+
+
+class CollectRequest(BaseModel):
+    """数据采集请求模型"""
+    company_name: str = Field(..., description="目标企业名称（必填）")
+
+
+class CollectResponse(BaseModel):
+    """数据采集响应模型"""
+    accurate_name: str
+    fuzzy_results: List[Dict[str, Any]]
+    verify_data: Dict[str, Any]
+
+
+@app.post(
+    "/collect",
+    response_model=CollectResponse,
+    summary="企业数据采集",
+    description="调用企查查 API 获取企业全量信息，用于前端即时展示。",
+)
+async def collect(request: CollectRequest) -> CollectResponse:
+    """企业数据采集接口 — 直接调用企查查，不经过分析流水线"""
+    try:
+        if not request.company_name or not request.company_name.strip():
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "validation_error", "message": "企业名称不能为空"},
+            )
+
+        client = get_qichacha_client()
+        result = client.get_company_info(request.company_name.strip())
+
+        return CollectResponse(
+            accurate_name=result["accurate_name"],
+            fuzzy_results=result["fuzzy_results"],
+            verify_data=result["verify_data"],
+        )
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail={"error": "collection_error", "message": str(e)})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail={"error": "internal_error", "message": str(e)})
+
+
+class ChatRequest(BaseModel):
+    """智能体对话请求模型"""
+    messages: List[Dict[str, str]]  # [{"role":"user","content":"..."}]
+    system_prompt: str = ""
+    temperature: float = 0.7
+    max_tokens: int = 4096
+
+
+@app.post("/chat/stream", summary="智能体流式问答")
+async def chat_stream(request: ChatRequest, raw_request: Request):
+    """SSE 流式对话接口"""
+
+    async def event_generator():
+        # 构建 LLM 消息
+        messages = []
+        if request.system_prompt:
+            messages.append(LLMMessage(role="system", content=request.system_prompt))
+        for msg in request.messages:
+            messages.append(LLMMessage(role=msg.get("role", "user"), content=msg.get("content", "")))
+
+        llm_request = LLMRequest(
+            messages=messages,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens,
+        )
+
+        try:
+            client = get_llm_client(provider=LLMProvider.POE)
+        except Exception:
+            client = get_llm_client(provider=LLMProvider.MOCK)
+
+        try:
+            async for chunk in client.stream_complete(llm_request):
+                # 检查客户端是否断开
+                if await raw_request.is_disconnected():
+                    break
+                yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'token', 'content': f'[错误] {e}'}, ensure_ascii=False)}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'content': ''})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 # 挂载静态文件服务（CSS、JS）

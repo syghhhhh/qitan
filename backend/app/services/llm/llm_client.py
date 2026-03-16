@@ -8,11 +8,13 @@ LLM 客户端模块
 
 from __future__ import annotations
 
+import json
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
 
 class LLMProvider(str, Enum):
@@ -124,6 +126,24 @@ class BaseLLMClient(ABC):
             LLMResponse: LLM 响应对象
         """
         pass
+
+    async def stream_complete(self, request: LLMRequest) -> AsyncGenerator[dict, None]:
+        """
+        流式文本补全请求
+
+        Args:
+            request: LLM 请求对象
+
+        Yields:
+            dict: {"type": "token"|"thinking"|"done", "content": "..."}
+        """
+        # 默认降级实现：调用 complete_async 后一次性返回
+        response = await self.complete_async(request)
+        if response.is_success:
+            yield {"type": "token", "content": response.content}
+        else:
+            yield {"type": "token", "content": f"[错误] {response.error_message}"}
+        yield {"type": "done", "content": ""}
 
     def simple_chat(
         self,
@@ -349,6 +369,66 @@ class PoeLLMClient(BaseLLMClient):
                 status=LLMStatus.ERROR,
                 error_message=f"请求失败: {e}",
             )
+
+    async def stream_complete(self, request: LLMRequest) -> AsyncGenerator[dict, None]:
+        """流式执行 Poe API 补全"""
+        import aiohttp
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+        }
+
+        payload = request.to_api_format()
+        if payload["model"] is None:
+            payload["model"] = self.model
+        payload["stream"] = True
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    self.base_url,
+                    headers=headers,
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=120),
+                ) as response:
+                    if response.status != 200:
+                        result = await response.text()
+                        yield {"type": "token", "content": f"[错误] HTTP {response.status}: {result}"}
+                        yield {"type": "done", "content": ""}
+                        return
+
+                    # 读取 SSE 流
+                    async for line in response.content:
+                        line_str = line.decode("utf-8").strip()
+                        if not line_str or not line_str.startswith("data: "):
+                            continue
+
+                        data_str = line_str[6:]  # 去掉 "data: " 前缀
+                        if data_str == "[DONE]":
+                            break
+
+                        try:
+                            data = json.loads(data_str)
+                            delta = data.get("choices", [{}])[0].get("delta", {})
+
+                            # 思考内容
+                            reasoning = delta.get("reasoning_content") or delta.get("reasoning")
+                            if reasoning:
+                                yield {"type": "thinking", "content": reasoning}
+
+                            # 正常内容
+                            content = delta.get("content")
+                            if content:
+                                yield {"type": "token", "content": content}
+                        except json.JSONDecodeError:
+                            continue
+
+                    yield {"type": "done", "content": ""}
+
+        except Exception as e:
+            yield {"type": "token", "content": f"[错误] 流式请求失败: {e}"}
+            yield {"type": "done", "content": ""}
 
     async def complete_async(self, request: LLMRequest) -> LLMResponse:
         """异步执行 Poe API 补全"""
