@@ -1,5 +1,7 @@
 # 日志文件
 backend/logs/*.log
+api_qichacha/test_result/
+.claude/settings.local.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -217,4 +219,3 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
-.claude/settings.local.json
