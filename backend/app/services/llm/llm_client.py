@@ -283,7 +283,7 @@ class PoeLLMClient(BaseLLMClient):
         self.api_key = api_key or os.environ.get("POE_API_KEY")
         self.model = model
         self.base_url = base_url
-        self.proxy = proxy
+        self.proxy = proxy or os.environ.get("POE_PROXY", "http://127.0.0.1:7890")
 
         if not self.api_key:
             raise LLMClientError("未配置 POE_API_KEY，请在 .env 文件中设置或传入 api_key 参数")
@@ -372,6 +372,8 @@ class PoeLLMClient(BaseLLMClient):
 
     async def stream_complete(self, request: LLMRequest) -> AsyncGenerator[dict, None]:
         """流式执行 Poe API 补全"""
+        import ssl
+
         import aiohttp
 
         headers = {
@@ -384,12 +386,18 @@ class PoeLLMClient(BaseLLMClient):
             payload["model"] = self.model
         payload["stream"] = True
 
+        # 通过代理时禁用 SSL 验证（代理会替换证书）
+        connector = None
+        if self.proxy:
+            connector = aiohttp.TCPConnector(ssl=False)
+
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(connector=connector) as session:
                 async with session.post(
                     self.base_url,
                     headers=headers,
                     json=payload,
+                    proxy=self.proxy if self.proxy else None,
                     timeout=aiohttp.ClientTimeout(total=120),
                 ) as response:
                     if response.status != 200:
@@ -447,12 +455,18 @@ class PoeLLMClient(BaseLLMClient):
         if payload["model"] is None:
             payload["model"] = self.model
 
+        # 通过代理时禁用 SSL 验证
+        connector = None
+        if self.proxy:
+            connector = aiohttp.TCPConnector(ssl=False)
+
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(connector=connector) as session:
                 async with session.post(
                     self.base_url,
                     headers=headers,
                     json=payload,
+                    proxy=self.proxy if self.proxy else None,
                     timeout=aiohttp.ClientTimeout(total=60),
                 ) as response:
                     latency = (asyncio.get_event_loop().time() - start_time) * 1000
